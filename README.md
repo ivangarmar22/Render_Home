@@ -2,6 +2,8 @@
 
 Recorrido interactivo en 3D de la vivienda 10 y su urbanización, desarrollado con Three.js y Vite.
 
+La interfaz se adapta a móvil y tablet, con controles táctiles y un encuadre específico para orientación vertical.
+
 ## Desarrollo
 
 Necesitas Node.js 22 o posterior.
