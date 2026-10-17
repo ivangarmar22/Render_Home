@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Chalet Vivienda 10</title>
+  <meta name="description" content="La vivienda 10 de asianPark 25 (Churriana, Málaga) en 3D, levantada a partir de las cotas reales de su proyecto." />
+  <meta name="theme-color" content="#efebe2" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <canvas id="gl" aria-hidden="true"></canvas>
+
+  <div class="loader" id="loader">
+    <p>Chalet Vivienda 10</p>
+    <div class="bar"><span>Dibujando el plano</span><i><b></b></i></div>
+  </div>
+  <div class="lost">La tarjeta gráfica se ha reiniciado. Recargando…</div>
+
+  <header class="topbar">
+    <a class="mark" href="#" id="toTop">Vivienda <span>10</span></a>
+    <button class="pill" id="freeBtn">Explorar libremente</button>
+  </header>
+
+  <section class="hero" id="hero" aria-label="Vivienda 10, planta baja">
+    <p class="kicker">asianPark 25 <span>·</span> Churriana, Málaga <span>·</span> Vivienda 10</p>
+    <h1><span>Toda casa</span><span>empieza siendo</span><span>un <em>plano.</em></span></h1>
+    <p class="lede">Cuatro plantas con jardín, solárium y garaje, levantadas pieza a pieza con las cotas reales de su proyecto. Haz scroll y entra en el plano.</p>
+    <div class="titleblock" aria-hidden="true">
+      <div><span>Promoción</span><b>asianPark 25</b></div>
+      <div><span>Plano</span><b>Planta baja</b></div>
+      <div><span>Frente</span><b>5,84 m</b></div>
+      <div><span>Altura libre</span><b>2,60 m</b></div>
+    </div>
+  </section>
+
+  <aside class="card" id="card" aria-live="polite">
+    <p class="card__no" id="cardNo"></p>
+    <h2 class="card__title" id="cardTitle"></h2>
+    <p class="card__meta" id="cardMeta"></p>
+    <p class="card__text" id="cardText"></p>
+  </aside>
+
+  <nav class="ruler" id="ruler" aria-label="Progreso del recorrido"><i class="ruler__now" id="rulerNow"></i></nav>
+  <p class="count" id="count"><b>00</b> / <span id="countTotal">17</span> estancias</p>
+  <div class="hint" id="hint"><span>Haz scroll para entrar</span><i></i></div>
+
+  <section class="finale" id="finale">
+    <p class="kicker">Fin del recorrido</p>
+    <h2>Ahora, <em>recórrela</em> a tu aire.</h2>
+    <p>Gira con el ratón, acerca con la rueda y elige qué planta ver.</p>
+    <button class="pill pill--solid" id="freeBtn2">Explorar libremente</button>
+  </section>
+
+  <div class="freebar" id="freebar">
+    <div class="seg" id="floors"></div>
+    <button id="exitFree">← Volver al recorrido</button>
+  </div>
+  <p class="freehint" id="freehint">Arrastra para girar · Rueda para acercar · Clic derecho para desplazar</p>
+
+  <main id="track"></main>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
