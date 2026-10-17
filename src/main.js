@@ -144,21 +144,37 @@ function setCamera(pos, tgt, fov) {
 let aspect = 1, total = 0;
 const fovFor = f => 2 * Math.atan(Math.tan(f * Math.PI / 360) * Math.pow(Math.max(1, 1.4 / aspect), 0.6)) * 180 / Math.PI;
 const track = $('track');
+const touch = matchMedia('(pointer: coarse)').matches;
+// En vertical, desplaza la imagen para dejar espacio al texto.
+const isPortrait = () => innerWidth < innerHeight && innerWidth <= 1100;
+// Reserva más espacio en tablet, donde la ficha muestra también su descripción.
+const portraitShift = () => (innerWidth <= 760 ? 0.06 : 0.12);
+function viewShift() {
+  if (isPortrait() && !free) camera.setViewOffset(innerWidth, innerHeight, 0, innerHeight * portraitShift(), innerWidth, innerHeight);
+  else camera.clearViewOffset();
+}
+// Ignora los cambios pequeños de innerHeight al aparecer o desaparecer la barra del navegador.
+let vh = innerHeight, vw = innerWidth;
 function layout() {
+  if (!touch || innerWidth !== vw || Math.abs(innerHeight - vh) > 0.25 * vh) { vh = innerHeight; vw = innerWidth; }
   aspect = innerWidth / innerHeight;
   renderer.setPixelRatio(pixelRatio());
   renderer.setSize(innerWidth, innerHeight, false);
   post.composer.setSize(innerWidth, innerHeight);
   camera.aspect = aspect;
+  viewShift();
   camera.updateProjectionMatrix();
-  const h = KEYS[0], visH = Math.max(13.5, 9 / aspect), f = fovFor(h.fov);
+  // En vertical, centra el plano en la parte superior; en horizontal, colócalo junto al texto.
+  const portrait = isPortrait(), h = KEYS[0], f = fovFor(h.fov);
+  const visH = portrait ? Math.max(22, 9 / aspect) : Math.max(13.5, 9 / aspect);
   const dist = visH / (2 * Math.tan(f * Math.PI / 360)), off = aspect > 1.15 ? 0.2 * visH * aspect : 0;
-  h.P.set(W / 2 - off, dist, 4.85);
-  h.Tg.set(W / 2 - off, 0, 4.8);
+  const up = portrait ? (0.12 - portraitShift()) * visH : 0;
+  h.P.set(W / 2 - off, dist, 4.85 + up);
+  h.Tg.set(W / 2 - off, 0, 4.8 + up);
   let u = 0;
   KEYS.forEach(k => { k.h0 = u; u += k.hold; k.h1 = u; u += k.go; });
   total = KEYS[KEYS.length - 1].h1;
-  track.style.height = (total + 1) * innerHeight + 'px';
+  track.style.height = (total + 1) * vh + 'px';
   placeMarks();
 }
 function sample(u) {
@@ -170,7 +186,7 @@ function sample(u) {
 }
 
 // Interfaz
-const card = $('card'), hero = $('hero'), hint = $('hint'), finale = $('finale'), ruler = $('ruler'), rulerNow = $('rulerNow');
+const card = $('card'), hero = $('hero'), hint = $('hint'), finale = $('finale'), ruler = $('ruler'), rulerNow = $('rulerNow'), progressNow = $('progressNow');
 const countB = $('count').querySelector('b');
 $('countTotal').textContent = KEYS.filter(k => k.card && k.card.no).length;
 const marks = [];
@@ -181,7 +197,7 @@ KEYS.forEach((k, i) => {
   b.className = 'ruler__mark';
   b.innerHTML = `<span>${k.card.title}</span>`;
   b.setAttribute('aria-label', `Ir a ${k.card.title}`);
-  b.addEventListener('click', () => lenis.scrollTo((k.h0 + k.hold * 0.5) * innerHeight, { duration: 2.2 }));
+  b.addEventListener('click', () => lenis.scrollTo((k.h0 + k.hold * 0.5) * vh, { duration: 2.2 }));
   ruler.appendChild(b);
   marks.push({ b, i });
 });
@@ -220,6 +236,7 @@ function applyScroll(u) {
   countB.textContent = String(no).padStart(2, '0');
   marks.forEach(m => m.b.classList.toggle('on', m.i === ci));
   rulerNow.style.top = clamp01(u / total) * 100 + '%';
+  progressNow.style.transform = `scaleX(${clamp01(u / total)})`;
   const heroOp = 1 - clamp01(u / 0.5);
   hero.style.opacity = heroOp;
   hero.style.pointerEvents = heroOp > 0.5 ? '' : 'none';
@@ -258,6 +275,7 @@ function enterFree() {
   useSky = true;
   controls.target.copy(lastTarget);
   controls.enabled = true;
+  viewShift();
   controls.update();
   setFreeFloor('todo');
 }
@@ -265,13 +283,18 @@ function exitFree() {
   free = false;
   controls.enabled = false;
   document.body.classList.remove('free');
+  viewShift();
   lenis.start();
 }
 $('freeBtn').addEventListener('click', enterFree);
 $('freeBtn2').addEventListener('click', enterFree);
 $('exitFree').addEventListener('click', exitFree);
 $('toTop').addEventListener('click', e => { e.preventDefault(); if (free) exitFree(); lenis.scrollTo(0, { duration: 2.5 }); });
-if (matchMedia('(pointer: coarse)').matches) $('freehint').textContent = 'Arrastra para girar · Pellizca para acercar';
+// textos de manejo para pantallas táctiles
+if (touch) {
+  $('freehint').textContent = 'Arrastra para girar · Pellizca para acercar · Dos dedos para desplazar';
+  document.querySelectorAll('[data-touch]').forEach(e => { e.textContent = e.dataset.touch; });
+}
 
 // Arranque
 addEventListener('resize', layout);
@@ -284,7 +307,7 @@ const fixedU = stop !== null && KEYS[+stop] ? KEYS[+stop].h0 + KEYS[+stop].hold 
 function frame(now) {
   requestAnimationFrame(frame);
   lenis.raf(now);
-  if (!free) applyScroll(fixedU ?? lenis.animatedScroll / innerHeight);
+  if (!free) applyScroll(fixedU ?? lenis.animatedScroll / vh);
   else {
     controls.update();
     const d = camera.position.distanceTo(controls.target);

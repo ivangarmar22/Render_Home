@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Chalet Vivienda 10</title>
   <meta name="description" content="La vivienda 10 de asianPark 25 (Churriana, Málaga) en 3D, levantada a partir de las cotas reales de su proyecto." />
   <meta name="theme-color" content="#efebe2" />
@@ -21,13 +21,13 @@
 
   <header class="topbar">
     <a class="mark" href="#" id="toTop">Vivienda <span>10</span></a>
-    <button class="pill" id="freeBtn">Explorar libremente</button>
+    <button class="pill" id="freeBtn">Explorar<span class="long"> libremente</span></button>
   </header>
 
   <section class="hero" id="hero" aria-label="Vivienda 10, planta baja">
-    <p class="kicker">asianPark 25 <span>·</span> Churriana, Málaga <span>·</span> Vivienda 10</p>
+    <p class="kicker">asianPark 25 <span>·</span> Churriana, Málaga<span class="far"> <span>·</span> Vivienda 10</span></p>
     <h1><span>Toda casa</span><span>empieza siendo</span><span>un <em>plano.</em></span></h1>
-    <p class="lede">Cuatro plantas con jardín, solárium y garaje, levantadas pieza a pieza con las cotas reales de su proyecto. Haz scroll y entra en el plano.</p>
+    <p class="lede">Cuatro plantas con jardín, solárium y garaje, levantadas pieza a pieza con las cotas reales de su proyecto. <span data-touch="Desliza hacia arriba y entra en el plano.">Haz scroll y entra en el plano.</span></p>
     <div class="titleblock" aria-hidden="true">
       <div><span>Promoción</span><b>asianPark 25</b></div>
       <div><span>Plano</span><b>Planta baja</b></div>
@@ -44,13 +44,14 @@
   </aside>
 
   <nav class="ruler" id="ruler" aria-label="Progreso del recorrido"><i class="ruler__now" id="rulerNow"></i></nav>
+  <div class="progress" aria-hidden="true"><i id="progressNow"></i></div>
   <p class="count" id="count"><b>00</b> / <span id="countTotal">17</span> estancias</p>
-  <div class="hint" id="hint"><span>Haz scroll para entrar</span><i></i></div>
+  <div class="hint" id="hint"><span data-touch="Desliza para entrar">Haz scroll para entrar</span><i></i></div>
 
   <section class="finale" id="finale">
     <p class="kicker">Fin del recorrido</p>
     <h2>Ahora, <em>recórrela</em> a tu aire.</h2>
-    <p>Gira con el ratón, acerca con la rueda y elige qué planta ver.</p>
+    <p data-touch="Arrastra para girar, pellizca para acercar y elige qué planta ver.">Gira con el ratón, acerca con la rueda y elige qué planta ver.</p>
     <button class="pill pill--solid" id="freeBtn2">Explorar libremente</button>
   </section>
 
