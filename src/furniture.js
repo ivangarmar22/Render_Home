@@ -301,25 +301,30 @@ function gamingChair(accent = 0xb8452a) {
   return g;
 }
 // puesto de estudio: portátil + monitor + silla gaming (la silla mira hacia -z)
-export function studyDesk(w, d, accent) {
+export function studyDesk(w, d, accents) {
   const g = table(w, d, 0.74, M.white, M.white);
-  const mon = grp();
-  rbox(mon, -0.1, 0, -0.08, 0.1, 0.012, 0.06, M.dark, 0.006);
-  box(mon, -0.015, 0.012, -0.04, 0.015, 0.2, -0.02, M.dark);
-  rbox(mon, -0.28, 0.14, -0.045, 0.28, 0.47, -0.025, M.black, 0.006);
-  box(mon, -0.27, 0.15, -0.025, 0.27, 0.46, -0.023, M.tv);
-  put(g, mon, 0.18, -d / 2 + 0.2, -0.15, 0.74);
-  const lap = grp();
-  rbox(lap, -0.17, 0, -0.12, 0.17, 0.016, 0.12, M.metal, 0.008);
-  box(lap, -0.15, 0.016, -0.02, 0.15, 0.018, 0.1, M.dark);
-  const sc = rbox(lap, -0.17, 0, -0.006, 0.17, 0.23, 0.0, M.metal, 0.006);
-  sc.position.set(0, 0.016, -0.12);
-  sc.rotation.x = -0.3;
-  put(g, lap, -0.32, 0.02, 0.25, 0.74);
-  rbox(g, 0.0, 0.74, 0.1, 0.4, 0.755, 0.24, M.dark, 0.006);
-  rbox(g, 0.47, 0.74, 0.12, 0.53, 0.762, 0.2, M.dark, 0.012);
-  cyl(g, 0.015, 0.07, 0.42, w / 2 - 0.12, 0.74, -d / 2 + 0.1, M.dark);
-  put(g, gamingChair(accent), 0, d / 2 + 0.3, 0);
+  const colors = Array.isArray(accents) ? accents : [accents];
+  for (let i = 0; i < colors.length; i++) {
+    const station = grp(), accent = colors[i], x = (i - (colors.length - 1) / 2) * w / colors.length;
+    const mon = grp();
+    rbox(mon, -0.1, 0, -0.08, 0.1, 0.012, 0.06, M.dark, 0.006);
+    box(mon, -0.015, 0.012, -0.04, 0.015, 0.2, -0.02, M.dark);
+    rbox(mon, -0.28, 0.14, -0.045, 0.28, 0.47, -0.025, M.black, 0.006);
+    box(mon, -0.27, 0.15, -0.025, 0.27, 0.46, -0.023, M.tv);
+    put(station, mon, 0.18, -d / 2 + 0.2, -0.15, 0.74);
+    const lap = grp();
+    rbox(lap, -0.17, 0, -0.12, 0.17, 0.016, 0.12, M.metal, 0.008);
+    box(lap, -0.15, 0.016, -0.02, 0.15, 0.018, 0.1, M.dark);
+    const sc = rbox(lap, -0.17, 0, -0.006, 0.17, 0.23, 0.0, M.metal, 0.006);
+    sc.position.set(0, 0.016, -0.12);
+    sc.rotation.x = -0.3;
+    put(station, lap, -0.32, 0.02, 0.25, 0.74);
+    rbox(station, 0.0, 0.74, 0.1, 0.4, 0.755, 0.24, M.dark, 0.006);
+    rbox(station, 0.47, 0.74, 0.12, 0.53, 0.762, 0.2, M.dark, 0.012);
+    cyl(station, 0.015, 0.07, 0.42, w / (2 * colors.length) - 0.12, 0.74, -d / 2 + 0.1, M.dark);
+    put(station, gamingChair(accent), 0, d / 2 + 0.3, 0);
+    put(g, station, x, 0, 0);
+  }
   return g;
 }
 export function wc() {
@@ -584,6 +589,47 @@ export function trailBike() {
   return g;
 }
 
+export function bicycle(accent = 0xb8452a) {
+  const g = grp(), wheelRadius = 0.34, wheelbase = 1.05;
+  const tube = (p0, p1, radius, material) => {
+    const a = new THREE.Vector3(...p0), b = new THREE.Vector3(...p1), length = a.distanceTo(b);
+    const mesh = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, length, 8), material);
+    mesh.position.copy(a).add(b).multiplyScalar(0.5);
+    mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), b.clone().sub(a).normalize());
+    g.add(mesh);
+  };
+  for (const x of [-wheelbase / 2, wheelbase / 2]) {
+    const tire = new THREE.Mesh(new THREE.TorusGeometry(wheelRadius - 0.035, 0.035, 8, 28), M.tire);
+    tire.position.set(x, wheelRadius, 0);
+    g.add(tire);
+    const rim = new THREE.Mesh(new THREE.TorusGeometry(wheelRadius - 0.07, 0.008, 6, 24), M.steel);
+    rim.position.set(x, wheelRadius, 0);
+    g.add(rim);
+    const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.12, 10), M.steel);
+    hub.rotation.x = Math.PI / 2;
+    hub.position.set(x, wheelRadius, 0);
+    g.add(hub);
+  }
+  const rear = [-wheelbase / 2, wheelRadius, 0], front = [wheelbase / 2, wheelRadius, 0];
+  const crank = [-0.05, 0.34, 0], seat = [-0.28, 0.79, 0], head = [0.34, 0.77, 0];
+  for (const z of [-0.018, 0.018]) {
+    tube(rear, [crank[0], crank[1], z], 0.018, accent);
+    tube([crank[0], crank[1], z], seat, 0.018, accent);
+    tube(seat, rear, 0.018, accent);
+    tube(seat, head, 0.018, accent);
+    tube(head, [crank[0], crank[1], z], 0.018, accent);
+    tube(head, front, 0.015, M.steel);
+  }
+  tube(seat, [seat[0], 0.91, 0], 0.018, M.dark);
+  rbox(g, -0.42, 0.9, -0.13, -0.12, 0.94, 0.13, M.black, 0.025);
+  tube(head, [0.4, 0.91, 0], 0.014, M.dark);
+  tube([0.4, 0.91, -0.23], [0.4, 0.91, 0.23], 0.012, M.dark);
+  tube(crank, [crank[0], crank[1], 0.14], 0.012, M.dark);
+  tube([crank[0], crank[1], 0.14], [crank[0] - 0.12, 0.34, 0.14], 0.012, M.dark);
+  tube([crank[0], crank[1], -0.14], [crank[0] + 0.12, 0.34, -0.14], 0.012, M.dark);
+  return g;
+}
+
 export function shelving(w, d = 0.45, h = 2) {
   const g = grp();
   for (const x of [-w / 2, w / 2 - 0.04]) box(g, x, 0, -d / 2, x + 0.04, h, d / 2, M.metal);
@@ -618,6 +664,40 @@ export function bbq() {
   for (const x of [-0.25, 0, 0.25]) hcyl(g, 0.025, 0.03, x, 0.7, 0.29, M.steel, 'z');
   return g;
 }
+export function gymStation() {
+  const g = grp();
+  for (const x of [-0.64, 0.64]) for (const z of [-0.32, 0.32]) {
+    box(g, x - 0.035, 0, z - 0.035, x + 0.035, 2.12, z + 0.035, M.dark);
+  }
+  for (const z of [-0.32, 0.32]) {
+    box(g, -0.72, 0.04, z - 0.04, 0.72, 0.1, z + 0.04, M.metal);
+    box(g, -0.67, 2.04, z - 0.045, 0.67, 2.12, z + 0.045, M.metal);
+    box(g, -0.67, 0.88, z - 0.035, 0.67, 0.94, z + 0.035, M.metal);
+  }
+  hcyl(g, 0.025, 1.7, 0, 1.62, -0.28, M.steel, 'x', 16);
+  for (const x of [-0.58, 0.58]) {
+    const plate = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.07, 24), M.dark);
+    plate.rotation.z = Math.PI / 2;
+    plate.position.set(x, 1.62, -0.28);
+    g.add(plate);
+  }
+  box(g, 0.28, 0.15, -0.27, 0.88, 0.95, 0.25, M.metal);
+  for (const y of [0.25, 0.4, 0.55, 0.7, 0.85]) box(g, 0.34, y, -0.3, 0.82, y + 0.025, -0.24, M.dark);
+  for (const [x, y, z] of [[0.55, 2.0, -0.2], [0.55, 1.02, -0.2], [0.55, 0.9, 0.22]]) {
+    const pulley = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.04, 20), M.dark);
+    pulley.rotation.x = Math.PI / 2;
+    pulley.position.set(x, y, z);
+    g.add(pulley);
+  }
+  box(g, 0.53, 1.05, -0.18, 0.57, 1.95, -0.14, M.steel);
+  box(g, 0.53, 0.93, 0.18, 0.57, 1.0, 0.22, M.steel);
+  rbox(g, -0.28, 0.48, 0.35, 0.28, 0.57, 1.55, M.black, 0.035);
+  box(g, -0.24, 0.08, 0.48, -0.18, 0.49, 0.54, M.metal);
+  box(g, 0.18, 0.08, 0.48, 0.24, 0.49, 0.54, M.metal);
+  box(g, -0.24, 0.08, 1.36, -0.18, 0.49, 1.42, M.metal);
+  box(g, 0.18, 0.08, 1.36, 0.24, 0.49, 1.42, M.metal);
+  return g;
+}
 export function outdoorSofa(w, d = 0.85) {
   const g = grp();
   rbox(g, -w / 2, 0.1, -d / 2, w / 2, 0.3, d / 2, M.teak, 0.015);
@@ -633,7 +713,7 @@ export function outdoorSofa(w, d = 0.85) {
   }
   return g;
 }
-export function dryingRack() {
+export function dryingRack(height = 1.5) {
   const g = grp();
   for (const z of [-0.75, 0.75]) {
     box(g, -0.03, 0, z - 0.03, 0.03, 1.5, z + 0.03, M.metal);
@@ -643,6 +723,7 @@ export function dryingRack() {
   rbox(g, -0.33, 0.95, -0.4, -0.29, 1.49, 0.2, fabric(0x7aa6c2, 2), 0.01);
   rbox(g, 0.07, 1.05, 0.0, 0.11, 1.49, 0.55, fabric(0xe8d9b5, 2), 0.01);
   rbox(g, 0.27, 1.12, -0.6, 0.31, 1.49, -0.1, fabric(0xffffff, 2), 0.01);
+  g.scale.y = height / 1.5;
   return g;
 }
 export function pendant(g, x, z, y = 1.7) {

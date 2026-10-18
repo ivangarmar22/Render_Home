@@ -230,7 +230,7 @@ body.free #gl { pointer-events: auto; touch-action: none; }
 }
 .freebar .seg button:hover, .freebar > button:hover { background: rgba(29, 29, 31, 0.08); }
 .freebar .seg button.on { background: var(--ink); color: var(--paper); }
-.freehint { position: fixed; top: 70px; left: 50%; transform: translateX(-50%); font: 12px var(--mono); color: var(--muted); display: none; z-index: 20; white-space: nowrap; }
+.freehint { position: fixed; top: 54px; left: 50%; transform: translateX(-50%); font: 12px var(--mono); color: var(--muted); display: none; z-index: 20; white-space: nowrap; }
 
 body.free .freebar { display: flex; }
 body.free .freehint { display: block; }
@@ -281,7 +281,7 @@ body.free .hero, body.free .card, body.free .ruler, body.free .count, body.free 
   .hint { bottom: calc(20px + env(safe-area-inset-bottom)); }
   .finale { bottom: calc(16px + env(safe-area-inset-bottom)); }
   .freebar { bottom: calc(14px + env(safe-area-inset-bottom)); border-radius: 22px; }
-  .freehint { top: calc(max(14px, env(safe-area-inset-top)) + 58px); background: rgba(239, 235, 226, 0.92); border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px; color: var(--ink); }
+  .freehint { top: calc(max(10px, env(safe-area-inset-top)) + 42px); background: rgba(239, 235, 226, 0.92); border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px; color: var(--ink); }
 }
 
 /* ---------- Móvil ---------- */

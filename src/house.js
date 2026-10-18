@@ -189,8 +189,7 @@ export function buildWorld(scene) {
     const L = LV.sot, b = L.base, C = M.concrete;
     slab(b, -T, W + T, BZ0 - 4.5, BZ1 + T, null, M.slab);
     floor(b, -T, BZ0 - 4.5, W + T, 3.63, M.garage, 0.004);
-    floor(b, 0, 3.63, W, 9.0, M.wood, 0.004);
-    floor(b, 0, 9.08, W, BZ1, M.garage, 0.004);
+    floor(b, 0, 3.63, W, BZ1, M.wood, 0.004);
     floor(b, 2.77, BZ0, 2.83, 3.5, M.paint, 0.012);
     floor(b, 0, BZ0 - 0.06, W, BZ0, M.paint, 0.012);
     wall(L, 'z', BZ0, BZ1, -T / 2, T, H, [], C);
@@ -200,7 +199,8 @@ export function buildWorld(scene) {
     iw(L, 'z', 3.705, 5.37, 1.10);
     iw(L, 'x', 0, 1.14, 5.37, [[0.15, 0.95, -1, 'a']]);
     slopedStairWall(L);
-    iw(L, 'x', 0, W, 9.04, [[2.0, 2.8, 1, 'a']]);          // trastero de 5,54 × 1,41 m
+    iw(L, 'x', 0, 1.55, 6.37, [[0.15, 0.95, 1, 'a']]);
+    iw(L, 'z', 6.37, BZ1, 1.55);
     // Panel de listones de roble que prolonga el muro de la escalera hasta el vestíbulo.
     const pz = ST.z0 + 1.04;                                                      // eje del muro central de la escalera
     for (let x = 1.14; x < 3.33; x += 0.065) box(L.walls, x, 0.02, pz - 0.025, Math.min(x + 0.045, 3.36), H - 0.02, pz + 0.025, M.oak);
@@ -212,22 +212,19 @@ export function buildWorld(scene) {
     F(L, Fu.trailBike(), 2.84, 2.0, Math.PI);
     F(L, Fu.mondeoMk3(), 4.3, 0.98, Math.PI);
     const tank = grp(); cyl(tank, 0.28, 0.28, 1.8, 0, 0, 0, M.white); cyl(tank, 0.29, 0.29, 0.06, 0, 1.78, 0, M.dark); F(L, tank, 1.55, 4.15);
-    // estudio: dos escritorios contra la medianera este
-    F(L, Fu.studyDesk(1.45, 0.7, 0xb8452a), W - 0.36, 6.78, -Math.PI / 2);
-    F(L, Fu.studyDesk(1.45, 0.7, 0x2f6fb5), W - 0.36, 8.23, -Math.PI / 2);
-    // zona de juegos: TV en la medianera oeste y sofá enfrente
-    F(L, Fu.rug(2.2, 2.6, 0x6d7a86), 1.6, 7.5);
-    F(L, Fu.woodUnit(2.0, 0.42, 0.42), 0.21, 7.5, Math.PI / 2);
-    F(L, Fu.tvPanel(1.66, 0.95, 0.95), 0.036, 7.5, Math.PI / 2);
-    const consoles = grp(); rbox(consoles, -0.15, 0.5, -0.1, 0.15, 0.58, 0.1, M.white, 0.02); rbox(consoles, 0.25, 0.5, -0.08, 0.5, 0.56, 0.1, M.black, 0.01);
-    put(L.furn, consoles, 0.22, 8.05, Math.PI / 2);          // sobre el mueble de TV
-    F(L, Fu.sofa(2.45, 1.0, M.fabricGrey), 2.75, 7.5, -Math.PI / 2);
-    F(L, Fu.coffeeTable(1.0, 0.55), 1.45, 7.5, Math.PI / 2);
-    F(L, plant('potted_plant_02', 0.85, 'round'), 0.5, 6.05);
-    // trastero
-    F(L, Fu.shelving(4.4), 2.77, 10.2, Math.PI);
-    const boxes = grp(); rbox(boxes, -0.3, 0, -0.25, 0.3, 0.45, 0.25, M.card, 0.01); rbox(boxes, -0.25, 0.45, -0.2, 0.2, 0.75, 0.2, M.card, 0.01);
-    F(L, boxes, 0.5, 9.55, 0.3);
+    F(L, Fu.bicycle(0xb8452a), 3.3, 3.89);
+    F(L, Fu.bicycle(0x2f6fb5), 3.3, 4.42);
+    F(L, Fu.studyDesk(3.9, 0.7, [0xb8452a, 0x2f6fb5]), 3.55, 10.05, Math.PI);
+    F(L, Fu.rug(2.2, 2.2, 0x6d7a86), W - 2.35, 7.25, Math.PI / 2);
+    F(L, Fu.woodUnit(2.0, 0.42, 0.42), W - 0.21, 7.25, -Math.PI / 2);
+    F(L, Fu.tvPanel(1.66, 0.95, 0.95), W - 0.04, 7.25, -Math.PI / 2);
+    const console = grp();
+    rbox(console, -0.22, 0, -0.14, 0.22, 0.07, 0.14, M.black, 0.025);
+    box(console, -0.14, 0.045, 0.141, 0.14, 0.052, 0.144, M.dark);
+    cyl(console, 0.012, 0.012, 0.008, 0.17, 0.04, 0.145, M.tv, 12);
+    put(L.furn, console, W - 0.21, 7.25, -Math.PI / 2, 0.53);
+    F(L, Fu.sofa(1.85, 0.82, M.fabricGrey), W - 2.35, 7.45, Math.PI / 2);
+    F(L, Fu.shelving(3.8, 0.42, 2.0), 0.3, 8.4, Math.PI / 2);
   }
 
   // Planta baja
@@ -429,7 +426,15 @@ export function buildWorld(scene) {
     F(L, Fu.dining(0.95, 2.0, 3, M.teak, M.fabricOut), 3.55, 1.45, Math.PI / 2); // mesa de terraza grande
     F(L, Fu.chair(M.teak, M.fabricOut), 2.27, 1.45, Math.PI / 2);
     F(L, Fu.chair(M.teak, M.fabricOut), 4.83, 1.45, -Math.PI / 2);
-    F(L, Fu.wardrobe(2.8, 0.62, 2.3), 3.9, 3.27, Math.PI);   // armario de gimnasio
+    box(L.furn, 2.24, 0, 3.03, 2.3, 0.88, 3.63, M.lacq);
+    box(L.furn, 3.84, 0, 3.03, 4.0, 0.88, 3.63, M.lacq);
+    box(L.furn, 4.9, 0, 3.03, 5.5, 0.88, 3.63, M.lacq);
+    box(L.furn, 2.24, 0.88, 3.03, 2.3, 0.92, 3.63, M.quartz);
+    box(L.furn, 3.84, 0.88, 3.03, 4.0, 0.92, 3.63, M.quartz);
+    box(L.furn, 4.9, 0.88, 3.03, 5.5, 0.92, 3.63, M.quartz);
+    F(L, Fu.gymStation(), 4.8, 6.45);
+    floor(b, W - 2.0, 6.05, W, 8.05, mat(0x292a2b, { roughness: 0.95 }), 0.014);
+    L.fp.push([W - 2.0, 6.05, W, 8.05]);
     F(L, plant('potted_plant_01', 1.1, 'terra'), W - 0.6, Z0 + 0.6);
 
     // zona al jardín: lavadora, aire acondicionado, fregadero, barbacoa y tendedero
@@ -438,12 +443,12 @@ export function buildWorld(scene) {
     rbox(sink, -0.77, 0.88, -0.31, 0.77, 0.92, 0.31, M.quartz, 0.005);
     box(sink, -0.45, 0.915, -0.2, 0.05, 0.925, 0.2, M.steel);
     cyl(sink, 0.012, 0.012, 0.3, -0.2, 0.92, -0.25, M.steel);
-    F(L, sink, 3.07, 6.42);
-    F(L, Fu.bbq(), 4.32, 6.42);
-    F(L, Fu.wardrobe(1.2, 0.64, 2.0, M.lacq), W - 0.32, 7.45, -Math.PI / 2);
-    for (const z of [8.7, 9.65]) F(L, (hasModel('exterior_aircon_unit') && model('exterior_aircon_unit', { child: 'exterior_aircon_unit' })) || Fu.acUnit(), W - 0.22, z, -Math.PI / 2);
-    F(L, Fu.dryingRack(), 1.2, 8.4);
-    F(L, plant('potted_plant_02', 1.0, 'round'), 0.45, Z1 - 0.5);
+    F(L, sink, 3.07, 3.33, Math.PI);
+    F(L, Fu.bbq(), 4.45, 3.33, Math.PI);
+    F(L, Fu.wardrobe(1.2, 0.64, 2.0, M.lacq), 0.32, 7.22, Math.PI / 2);
+    for (const z of [8.18, 9.12]) F(L, (hasModel('exterior_aircon_unit') && model('exterior_aircon_unit', { child: 'exterior_aircon_unit' })) || Fu.acUnit(), 0.32, z, Math.PI / 2);
+    F(L, Fu.dryingRack(1.32), 3.6, 9.55, Math.PI / 2);
+    F(L, plant('potted_plant_02', 1.0, 'round'), 4.9, 9.8);
   }
 
   // suelo bajo tierra, visible cuando solo se ve el sótano
@@ -517,16 +522,15 @@ function kitchen(L) {
   item(L, 'cocina: frigorífico', 0.98, 0, z0 + 0.01, 1.88, 1.82, 2.43);
   item(L, 'cocina: torre de horno', 0, 0, z1, 0.65, 2.25, 5.81);
   item(L, 'cocina: altos y campana', 0, 1.5, z0, 0.5, 2.6, z1);
-  // isla de 45 cm, todo almacenaje, sin taburetes
-  box(g, 1.83, 0, 2.58, 2.22, 0.1, 4.32, M.dark);
-  box(g, 1.8, 0.1, 2.55, 2.25, 0.88, 4.35, M.oak);
-  rbox(g, 1.78, 0.88, 2.53, 2.27, 0.91, 4.37, M.quartz, 0.006);
-  for (let z = 2.55 + 0.435; z < 4.3; z += 0.435) for (const x of [1.797, 2.253]) box(g, x - 0.004, 0.12, z - 0.003, x + 0.004, 0.86, z + 0.003, M.dark);
-  fruitBowl(g, 2.03, 0.91, 3.3);
-  L.fp.push([1.78, 2.53, 2.27, 4.37]);
-  item(L, 'cocina: isla', 1.78, 0, 2.53, 2.27, 0.91, 4.37);
-  Fu.pendant(g, 2.03, 3.05);
-  Fu.pendant(g, 2.03, 3.85);
+  box(g, 1.655, 0, 3.35, 2.035, 0.1, 5.35, M.dark);
+  box(g, 1.645, 0.1, 3.35, 2.045, 0.88, 5.35, M.oak);
+  rbox(g, 1.62, 0.88, 3.35, 2.07, 0.91, 5.35, M.quartz, 0.006);
+  for (let z = 3.35 + 0.4; z < 5.35; z += 0.4) for (const x of [1.642, 2.048]) box(g, x - 0.004, 0.12, z - 0.003, x + 0.004, 0.86, z + 0.003, M.dark);
+  fruitBowl(g, 1.845, 0.91, 4.35);
+  L.fp.push([1.62, 3.35, 2.07, 5.35]);
+  item(L, 'cocina: isla', 1.62, 0, 3.35, 2.07, 0.91, 5.35);
+  Fu.pendant(g, 1.845, 3.85);
+  Fu.pendant(g, 1.845, 4.85);
 }
 // frutero sobre la isla
 function fruitBowl(g, x, y, z) {
