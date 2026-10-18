@@ -23,7 +23,9 @@ export function box(g, x0, y0, z0, x1, y1, z1, m) {
 export function rbox(g, x0, y0, z0, x1, y1, z1, m, r = 0.04, seg = 3) {
   const w = x1 - x0, h = y1 - y0, d = z1 - z0;
   r = Math.max(0.002, Math.min(r, w / 2 - 0.001, h / 2 - 0.001, d / 2 - 0.001));
-  return at(g, new THREE.Mesh(new RoundedBoxGeometry(w, h, d, seg, r), m), (x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2);
+  const geo = new RoundedBoxGeometry(w, h, d, seg, r);
+  if (m.userData.ts) scaleBoxUV(geo, w, h, d, m.userData.ts);
+  return at(g, new THREE.Mesh(geo, m), (x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2);
 }
 // cilindro apoyado en y (base)
 export function cyl(g, rt, rb, h, x, y, z, m, seg = 28) {

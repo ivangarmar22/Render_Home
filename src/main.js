@@ -1,13 +1,12 @@
 import 'lenis/dist/lenis.css';
-import './style.css';
 import * as THREE from 'three';
 import Lenis from 'lenis';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js';
-import { W, lite, params, clamp01, ease, easeIO } from './config.js';
+import { W, lite, detailedQuality, params, clamp01, ease, easeIO } from './config.js';
 import { M, allTextures } from './materials.js';
 import { LV, buildWorld } from './house.js';
-import { makeSheets } from './plan.js';
+import { makeSheets, PLAN_LEVELS, ROOMS, roomMeasurements } from './plan.js';
 import { KEYS, V, resolveKeys } from './tour.js';
 import { createPost } from './post.js';
 import { loadModels } from './models.js';
@@ -21,7 +20,7 @@ const $ = id => document.getElementById(id);
 
 // Renderizado
 const canvas = $('gl');
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, stencil: false, powerPreference: 'high-performance' });
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: detailedQuality, stencil: false, powerPreference: 'high-performance' });
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.toneMapping = THREE.NoToneMapping;   // el tono lo aplica el postprocesado
@@ -31,9 +30,9 @@ canvas.addEventListener('webglcontextrestored', () => location.reload());
 
 const scene = new THREE.Scene();
 scene.background = PAPER.clone();
-const ENV_I = 0.8, SUN_I = 2.0;
+const ENV_I = detailedQuality ? 1.0 : 0.8, SUN_I = detailedQuality ? 1.4 : 2.0;
 scene.environmentIntensity = ENV_I;
-scene.backgroundIntensity = 1.35;
+scene.backgroundIntensity = detailedQuality ? 0.95 : 1.35;
 scene.fog = new THREE.Fog(0xd9d6ce, 170, 560);
 
 const camera = new THREE.PerspectiveCamera(45, 1, 0.05, 900);
@@ -41,13 +40,14 @@ const controls = new OrbitControls(camera, canvas);
 Object.assign(controls, { enabled: false, enableDamping: true, maxPolarAngle: Math.PI / 2 - 0.03, minDistance: 1.2, maxDistance: 140 });
 
 // Luz y cielo
-scene.add(new THREE.HemisphereLight(0xf4f6f8, 0x8d8a84, 0.2));
-const sun = new THREE.DirectionalLight(0xfff0e0, 2.0);
+scene.add(new THREE.HemisphereLight(detailedQuality ? 0xfff1df : 0xf4f6f8, detailedQuality ? 0xa98767 : 0x8d8a84, detailedQuality ? 1.6 : 0.2));
+const sun = new THREE.DirectionalLight(0xfff0e0, SUN_I);
 const SUN_DIR = new THREE.Vector3(-0.14, 0.82, 0.56).normalize();   // sol alto desde el sur (lado jardín)
 sun.castShadow = true;
 sun.shadow.mapSize.setScalar(lite ? 2048 : 4096);
 sun.shadow.bias = -0.00015;
-sun.shadow.normalBias = 0.025;
+sun.shadow.normalBias = detailedQuality ? 0.015 : 0.025;
+sun.shadow.radius = detailedQuality ? 2 : 1;
 Object.assign(sun.shadow.camera, { near: 1, far: 280 });
 scene.add(sun, sun.target);
 let shadowSize = 0;
@@ -72,7 +72,20 @@ const basementLights = [[2.8, 1.0], [1.4, 6.6], [4.1, 7.2], [2.8, 9.6]].map(([x,
   return l;
 });
 
-let skyTex = null;
+const interiorLights = detailedQuality ? [
+  ['baja', 2.8, 2.4, 7.7, 8, 8],
+  ['baja', 0.8, 2.4, 3.5, 7, 7],
+  ['pri', 4.2, 5.3, 7.7, 8, 7],
+  ['pri', 4.2, 5.3, 1.6, 7, 7],
+  ['pri', 1.0, 5.3, 1.5, 7, 7],
+].map(([level, x, y, z, intensity, distance]) => {
+  const light = new THREE.PointLight(0xffe8cf, 0, distance, 2);
+  light.position.set(x, y, z);
+  scene.add(light);
+  return { level, light, intensity };
+}) : [];
+
+let skyTex = null, hdrSkyTex = null;
 new THREE.TextureLoader().load(`${BASE}sky/sky.jpg`, tx => {
   tx.mapping = THREE.EquirectangularReflectionMapping;
   tx.colorSpace = THREE.SRGBColorSpace;
@@ -81,7 +94,7 @@ new THREE.TextureLoader().load(`${BASE}sky/sky.jpg`, tx => {
 new RGBELoader().load(`${BASE}sky/sky.hdr`, hdr => {
   const pm = new THREE.PMREMGenerator(renderer);
   scene.environment = pm.fromEquirectangular(hdr).texture;
-  hdr.dispose();
+  hdrSkyTex = hdr;
   pm.dispose();
 });
 
@@ -111,11 +124,14 @@ function applyLevels(vs, rising) {
   // Bajo rasante, sustituye la luz exterior por la iluminación del sótano.
   const sotOn = LV.sot.g.visible && !LV.baja.g.visible ? ease(clamp01(vs.sot - 1)) : 0;
   for (const l of basementLights) l.intensity = 14 * sotOn;
+  for (const { level, light, intensity } of interiorLights) {
+    light.intensity = LV[level].g.visible ? intensity * ease(clamp01(vs[level] - 1)) : 0;
+  }
   sun.intensity = SUN_I * (1 - 0.8 * sotOn);
   scene.environmentIntensity = ENV_I * (1 - 0.55 * sotOn);
   const rb = LV.baja.g.visible ? clamp01(vs.baja - 1) : 0;
   M.ground.color.copy(PAPER).lerp(GROUND, ease(rb));
-  scene.background = useSky && skyTex ? skyTex : PAPER;
+  scene.background = useSky && detailedQuality && hdrSkyTex ? hdrSkyTex : useSky && skyTex ? skyTex : PAPER;
   post.setBuilt(ease(built));
   // Renderiza el plano a resolución nativa para mantener nítidas las etiquetas.
   if ((built < 0.001) !== paperView) {
@@ -126,7 +142,7 @@ function applyLevels(vs, rising) {
   }
 }
 let paperView = true;
-const pixelRatio = () => Math.min(devicePixelRatio, paperView ? 2 : lite ? 1.25 : 1.5);
+const pixelRatio = () => Math.min(devicePixelRatio, detailedQuality ? (paperView ? 2.5 : 2) : paperView ? 2 : lite ? 1.25 : 1.5);
 
 // Aleja el plano cercano con la cámara para evitar solapamientos visibles.
 function setCamera(pos, tgt, fov) {
@@ -248,12 +264,70 @@ function applyScroll(u) {
 let free = false;
 const FLOORS = [['todo', 'Todo'], ['cub', 'Solárium'], ['pri', 'Primera'], ['baja', 'Baja'], ['sot', 'Sótano']];
 const floorsEl = $('floors');
+const plansView = $('plansView'), planCards = $('planCards'), showPlans = $('showPlans');
 FLOORS.forEach(([k, label]) => {
   const b = document.createElement('button');
   b.textContent = label;
   b.dataset.k = k;
   b.addEventListener('click', () => setFreeFloor(k));
   floorsEl.appendChild(b);
+});
+function populatePlanCards() {
+  for (const [key, title] of PLAN_LEVELS) {
+    const sheet = LV[key]?.sheet;
+    const image = sheet?.material?.map?.image;
+    if (!image || typeof image.toDataURL !== 'function') throw new Error(`No se pudo preparar el plano de ${title}.`);
+
+    const card = document.createElement('article');
+    card.className = 'plan-card';
+    const heading = document.createElement('h3');
+    heading.textContent = title;
+    const figure = document.createElement('figure');
+    const preview = document.createElement('img');
+    preview.src = image.toDataURL('image/jpeg', 0.92);
+    preview.alt = `${title} acotada`;
+    preview.loading = 'lazy';
+    figure.appendChild(preview);
+
+    const table = document.createElement('table');
+    const head = document.createElement('thead');
+    const headingRow = document.createElement('tr');
+    for (const label of ['Estancia', 'Cotas', 'Superficie']) {
+      const cell = document.createElement('th');
+      cell.scope = 'col';
+      cell.textContent = label;
+      headingRow.appendChild(cell);
+    }
+    head.appendChild(headingRow);
+    const body = document.createElement('tbody');
+    for (const room of ROOMS.filter(item => item.lvl === key && item.name !== 'Calle peatonal' && item.name !== 'Calle de garaje')) {
+      const { area, dims, estimated, estimatedDims } = roomMeasurements(room);
+      const row = document.createElement('tr');
+      for (const value of [
+        `${room.name}${room.out ? ' · exterior' : ''}`,
+        dims ? `${estimatedDims ? '≈ ' : ''}${dims} m` : '—',
+        area ? `${estimated ? '≈ ' : ''}${area}` : '—',
+      ]) {
+        const cell = document.createElement('td');
+        cell.textContent = value;
+        row.appendChild(cell);
+      }
+      body.appendChild(row);
+    }
+    table.append(head, body);
+    card.append(heading, figure, table);
+    planCards.appendChild(card);
+  }
+}
+showPlans.addEventListener('click', () => {
+  plansView.showModal();
+  document.body.classList.add('plans-open');
+  showPlans.setAttribute('aria-expanded', 'true');
+});
+$('closePlans').addEventListener('click', () => plansView.close());
+plansView.addEventListener('close', () => {
+  document.body.classList.remove('plans-open');
+  showPlans.setAttribute('aria-expanded', 'false');
 });
 function setFreeFloor(k) {
   const order = ['baja', 'pri', 'cub'], vs = V({});
@@ -325,6 +399,7 @@ const fontsReady = Promise.race([
 
 Promise.all([fontsReady, assetsReady]).then(async () => {
   makeSheets(renderer, PAPER);
+  populatePlanCards();
   // Prepara texturas y shaders antes de mostrar la escena.
   allTextures().forEach(tx => renderer.initTexture(tx));
   for (const L of Object.values(LV)) L.g.visible = true;

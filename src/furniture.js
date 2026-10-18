@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { M, mat, fabric } from './materials.js';
 import { box, rbox, cyl, lathe, sphere } from './geom.js';
-import { rnd } from './config.js';
+import { rnd, detailedQuality } from './config.js';
 
 // Respaldos y cabeceros miran a -z; ry: π/2 oeste, -π/2 este, π sur.
 export const grp = () => new THREE.Group();
@@ -18,27 +18,63 @@ function hcyl(g, r, len, x, y, z, m, axis = 'x', seg = 10) {
 }
 
 // Dormitorio
+function duvet(g, w, d, y, z, material) {
+  const geometry = new THREE.PlaneGeometry(w, d, 36, 44);
+  const positions = geometry.attributes.position;
+  for (let i = 0; i < positions.count; i++) {
+    const x = positions.getX(i), v = positions.getY(i) / d + 0.5, u = x / w + 0.5;
+    const broadFold = Math.sin((u * 2.2 + v * 1.4) * Math.PI) * Math.sin(v * Math.PI);
+    const fineFold = Math.sin((u * 8.5 - v * 5.2) * Math.PI) * 0.005;
+    positions.setZ(i, 0.004 + broadFold * 0.022 + fineFold);
+  }
+  positions.needsUpdate = true;
+  geometry.computeVertexNormals();
+  const cover = new THREE.Mesh(geometry, material);
+  cover.rotation.x = -Math.PI / 2;
+  cover.position.set(0, y, z);
+  g.add(cover);
+}
+
 export function bed(w, l, col) {
   const g = grp();
-  rbox(g, -w / 2, 0.08, -l / 2, w / 2, 0.3, l / 2, M.oak, 0.02);
-  for (const sx of [-1, 1]) for (const sz of [-1, 1]) leg(g, sx * (w / 2 - 0.08), sz * (l / 2 - 0.08), 0.08);
-  rbox(g, -w / 2 + 0.03, 0.3, -l / 2 + 0.04, w / 2 - 0.03, 0.53, l / 2 - 0.03, M.white, 0.07, 4);
-  rbox(g, -w / 2 - 0.01, 0.48, -l / 2 + 0.6, w / 2 + 0.01, 0.585, l / 2 + 0.02, fabric(col), 0.05, 4);
-  rbox(g, -w / 2 - 0.015, 0.5, l / 2 - 0.62, w / 2 + 0.015, 0.6, l / 2 - 0.12, fabric(0xd8cdb8), 0.04, 4);
+  const coverColor = col;
+  const throwColor = detailedQuality ? 0xb9aa94 : 0xd8cdb8;
+  const accentColor = detailedQuality ? 0xd8cec0 : 0xa86f4f;
+  const frameMaterial = detailedQuality ? M.oakDark : M.oak;
+  rbox(g, -w / 2, 0.08, -l / 2, w / 2, 0.3, l / 2, frameMaterial, 0.02);
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) leg(g, sx * (w / 2 - 0.08), sz * (l / 2 - 0.08), 0.08, detailedQuality ? frameMaterial : M.dark);
+  rbox(g, -w / 2 + 0.03, 0.3, -l / 2 + 0.04, w / 2 - 0.03, 0.53, l / 2 - 0.03, detailedQuality ? M.linen : M.white, 0.07, 4);
+  rbox(g, -w / 2 - 0.02, 0.48, -l / 2 + 0.6, w / 2 + 0.02, 0.585, l / 2 + 0.04, fabric(coverColor), 0.07, 5);
+  if (detailedQuality) duvet(g, w - 0.04, l - 0.58, 0.586, 0.31, fabric(coverColor));
+  rbox(g, -w / 2 - 0.015, 0.5, l / 2 - 0.62, w / 2 + 0.015, 0.6, l / 2 - 0.12, fabric(throwColor), 0.04, 4);
   const n = w > 1.3 ? 2 : 1, pw = (w - 0.16) / n;
   for (let i = 0; i < n; i++) {
     const cx = -w / 2 + 0.08 + (i + 0.5) * pw;
-    sphere(g, 1, cx, 0.62, -l / 2 + 0.28, fabric(0xf4f1ea), pw * 0.45, 0.09, 0.2).rotation.x = -0.25;
+    if (detailedQuality) {
+      const pillow = rbox(g, cx - pw * 0.43, 0.59, -l / 2 + 0.13, cx + pw * 0.43, 0.72, -l / 2 + 0.43, fabric(0xded7ca), 0.055, 5);
+      pillow.rotation.x = -0.12;
+      pillow.rotation.z = i === 0 ? -0.035 : 0.035;
+    } else {
+      sphere(g, 1, cx, 0.62, -l / 2 + 0.28, fabric(0xf4f1ea), pw * 0.45, 0.09, 0.2).rotation.x = -0.25;
+    }
   }
-  sphere(g, 1, w * 0.12, 0.66, -l / 2 + 0.48, fabric(0xa86f4f), 0.2, 0.08, 0.13).rotation.x = -0.5;
+  if (detailedQuality) {
+    const accent = rbox(g, w * 0.12 - 0.15, 0.65, -l / 2 + 0.42, w * 0.12 + 0.15, 0.77, -l / 2 + 0.64, fabric(accentColor), 0.05, 5);
+    accent.rotation.x = -0.1;
+    accent.rotation.z = -0.12;
+  } else {
+    sphere(g, 1, w * 0.12, 0.66, -l / 2 + 0.48, fabric(accentColor), 0.2, 0.08, 0.13).rotation.x = -0.5;
+  }
   rbox(g, -w / 2 - 0.06, 0.12, -l / 2 - 0.1, w / 2 + 0.06, 1.15, -l / 2, M.headboard, 0.04, 4);
   return g;
 }
 export function nightstand() {
   const g = grp();
-  rbox(g, -0.23, 0.12, -0.2, 0.23, 0.5, 0.2, M.oak, 0.015);
-  for (const sx of [-1, 1]) for (const sz of [-1, 1]) leg(g, sx * 0.19, sz * 0.16, 0.12, M.dark, 0.012);
-  box(g, -0.2, 0.31, 0.2, 0.2, 0.312, 0.202, M.dark);
+  const finish = detailedQuality ? M.oakDark : M.oak;
+  const hardware = detailedQuality ? M.steel : M.dark;
+  rbox(g, -0.23, 0.12, -0.2, 0.23, 0.5, 0.2, finish, 0.015);
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) leg(g, sx * 0.19, sz * 0.16, 0.12, detailedQuality ? M.lacq : M.dark, 0.012);
+  box(g, -0.2, 0.31, 0.2, 0.2, 0.312, 0.202, hardware);
   lathe(g, [[0.07, 0], [0.08, 0.02], [0.05, 0.12], [0.06, 0.2], [0.012, 0.32], [0, 0.32]], 0.05, 0.5, -0.05, M.ceramic, 24);
   lathe(g, [[0.15, 0], [0.11, 0.2], [0.105, 0.2], [0.145, 0]], 0.05, 0.75, -0.05, M.shade, 32);
   box(g, -0.17, 0.5, 0.0, -0.03, 0.53, 0.14, fabric(0x6b5a4a));
@@ -60,13 +96,14 @@ export function wardrobe(w, d = 0.6, h = 2.4, m = M.wardrobe) {
 const CLOTH = [0x2f3e4f, 0xd8d2c4, 0x8a6d55, 0xf2efe8, 0x5c6b52, 0xa6413a, 0x1f2328, 0xc7b9a0, 0x6e7f99];
 export function openWardrobe(w, d = 0.5, h = 2.4) {
   const g = grp();
-  box(g, -w / 2, 0, -d / 2, w / 2, h, -d / 2 + 0.02, M.oak);
-  box(g, -w / 2, 0, -d / 2, -w / 2 + 0.025, h, d / 2, M.oak);
-  box(g, w / 2 - 0.025, 0, -d / 2, w / 2, h, d / 2, M.oak);
-  box(g, -w / 2 + 0.6, 0, -d / 2, -w / 2 + 0.625, h, d / 2, M.oak);
-  box(g, -w / 2, h - 0.025, -d / 2, w / 2, h, d / 2, M.oak);
-  for (const y of [0.32, 1.95]) box(g, -w / 2, y, -d / 2, w / 2, y + 0.025, d / 2, M.oak);
-  for (const y of [0.75, 1.2, 1.6]) box(g, -w / 2, y, -d / 2, -w / 2 + 0.6, y + 0.02, d / 2, M.oak);
+  const wood = detailedQuality ? M.oakDark : M.oak;
+  box(g, -w / 2, 0, -d / 2, w / 2, h, -d / 2 + 0.02, wood);
+  box(g, -w / 2, 0, -d / 2, -w / 2 + 0.025, h, d / 2, wood);
+  box(g, w / 2 - 0.025, 0, -d / 2, w / 2, h, d / 2, wood);
+  box(g, -w / 2 + 0.6, 0, -d / 2, -w / 2 + 0.625, h, d / 2, wood);
+  box(g, -w / 2, h - 0.025, -d / 2, w / 2, h, d / 2, wood);
+  for (const y of [0.32, 1.95]) box(g, -w / 2, y, -d / 2, w / 2, y + 0.025, d / 2, wood);
+  for (const y of [0.75, 1.2, 1.6]) box(g, -w / 2, y, -d / 2, -w / 2 + 0.6, y + 0.02, d / 2, wood);
   hcyl(g, 0.012, w - 0.66, 0.3, 1.85, 0, M.metal, 'x');
   for (let x = -w / 2 + 0.68; x < w / 2 - 0.06; x += rnd(0.05, 0.08)) {
     const len = rnd(0.65, 1.15), col = CLOTH[Math.floor(rnd(0, CLOTH.length))];
@@ -145,19 +182,21 @@ export function dining(w, l, perSide, cm = M.oak, seat = null) {
 }
 export function coffeeTable(w, d) {
   const g = grp();
-  rbox(g, -w / 2, 0.34, -d / 2, w / 2, 0.38, d / 2, M.oak, 0.02);
-  rbox(g, -w / 2 + 0.05, 0.1, -d / 2 + 0.05, w / 2 - 0.05, 0.12, d / 2 - 0.05, M.oak, 0.01);
+  const wood = detailedQuality ? M.oakDark : M.oak;
+  rbox(g, -w / 2, 0.34, -d / 2, w / 2, 0.38, d / 2, wood, 0.02);
+  rbox(g, -w / 2 + 0.05, 0.1, -d / 2 + 0.05, w / 2 - 0.05, 0.12, d / 2 - 0.05, wood, 0.01);
   for (const sx of [-1, 1]) for (const sz of [-1, 1]) leg(g, sx * (w / 2 - 0.06), sz * (d / 2 - 0.06), 0.34, M.dark, 0.015);
   books(g, -w / 4, 0.38, 0, 3);
   vase(g, w / 4, 0.38, 0, 0.6);
   return g;
 }
 // mueble bajo largo de roble con frentes ranurados (trasera contra la pared en -z)
-export function woodUnit(w, d = 0.4, h = 0.45) {
+export function woodUnit(w, d = 0.4, h = 0.45, finish = detailedQuality ? M.oakDark : M.oak) {
   const g = grp();
+  const wood = finish;
   box(g, -w / 2 + 0.05, 0, -d / 2 + 0.04, w / 2 - 0.05, 0.08, d / 2 - 0.04, M.dark);
-  box(g, -w / 2, 0.08, -d / 2, w / 2, 0.08 + h, d / 2 - 0.01, M.oak);
-  for (let x = -w / 2 + 0.02; x < w / 2 - 0.02; x += 0.035) box(g, x, 0.1, d / 2 - 0.01, x + 0.022, 0.06 + h, d / 2, M.oak);
+  box(g, -w / 2, 0.08, -d / 2, w / 2, 0.08 + h, d / 2 - 0.01, wood);
+  for (let x = -w / 2 + 0.02; x < w / 2 - 0.02; x += 0.035) box(g, x, 0.1, d / 2 - 0.01, x + 0.022, 0.06 + h, d / 2, wood);
   vase(g, -w / 2 + 0.25, 0.08 + h, 0, 0.9);
   books(g, w / 2 - 0.35, 0.08 + h, 0, 4);
   return g;
@@ -487,7 +526,7 @@ export function bmwX3(color = 0xf3f3f0) {
 }
 
 // Ford Mondeo MK3 berlina (2004) champán: 4,73 × 1,81 × 1,43 m · batalla 2,75 m · llanta 16"
-export function mondeoMk3(color = 0xcbb48e) {
+export function mondeoMk3(color = 0xd6c5a6) {
   const g = grp(), c = grp(), W = 1.81, m = paint(color, 0.7), FA = 1.43, RA = -1.32, R = 0.32;
   BODY = { belt: 1.0, top: 1.43, len: 4.78 };
   profile(c, [[2.34, 0.36], [2.38, 0.56], [2.33, 0.74], [2.12, 0.84], [1.25, 0.99], [0.6, 1.38], [0.32, 1.43], [-0.78, 1.42], [-1.08, 1.36], [-1.56, 1.02], [-2.22, 0.99], [-2.35, 0.89], [-2.39, 0.62], [-2.36, 0.36]],

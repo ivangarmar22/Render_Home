@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { W, D, T, t, H, FF, SL, PITCH, BZ0, BZ1, GZ, OV, ST, STREET_N, setSeed, rnd } from './config.js';
+import { W, BW, D, T, t, H, FF, SL, PITCH, BZ0, BZ1, GZ, OV, ST, STREET_N, setSeed, rnd, detailedQuality } from './config.js';
 import { M, mat } from './materials.js';
 import { box, rbox, cyl, floor, slab, floorHole, bake } from './geom.js';
 import * as Fu from './furniture.js';
@@ -87,6 +87,22 @@ function shutter(g, a, b, y1, z, drop = 0.42) {
 // planta real (Poly Haven) con alternativa procedural
 function plant(id, s = 1, kind) { return (hasModel(id) && model(id, { scale: s })) || pottedPlant(s * 1.1, kind); }
 
+function diningSet(L, w, l, perSide, x, z) {
+  if (!detailedQuality || !hasModel('dining_table') || !hasModel('dining_chair_02')) {
+    return F(L, Fu.dining(w, l, perSide, M.oak, M.fabricBeige), x, z);
+  }
+  const set = grp(), table = model('dining_table', { size: [l, 0.75, w] });
+  table.rotation.y = Math.PI / 2;
+  set.add(table);
+  const step = l / perSide;
+  for (let i = 0; i < perSide; i++) {
+    const chairZ = -l / 2 + step * (i + 0.5);
+    put(set, model('dining_chair_02', { size: [0.44, 0.96, 0.48] }), -w / 2 - 0.12, chairZ, Math.PI / 2);
+    put(set, model('dining_chair_02', { size: [0.44, 0.96, 0.48] }), w / 2 + 0.12, chairZ, -Math.PI / 2);
+  }
+  return F(L, set, x, z);
+}
+
 function F(L, o, x, z, ry = 0) {
   o.position.set(x, 0, z);
   o.rotation.y = ry;
@@ -112,7 +128,7 @@ function stairs(L) {
   box(L.walls, 3.36, 0, a1, 4.98, FF, b0, M.wall);                                // muro central
   L.rec.push({ axis: 'x', a: 3.36, b: 4.98, c: (a1 + b0) / 2, th: b0 - a1, kind: 'solid' });
   // pasamanos en el muro central
-  const hr = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 1.9, 10), M.oak);
+  const hr = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 1.9, 10), M.handrail);
   hr.rotation.z = Math.PI / 2 + Math.atan2(1.0, 1.62);
   hr.position.set(4.17, 1.55, b0 + 0.03);
   L.furn.add(hr);
@@ -175,7 +191,7 @@ function slopedStairWall(L) {
   const me = new THREE.Mesh(geo, M.wall);
   me.position.z = ST.z1;
   L.walls.add(me);
-  const cap = new THREE.Mesh(new THREE.BoxGeometry(1.86, 0.04, 0.12), M.oak);
+  const cap = new THREE.Mesh(new THREE.BoxGeometry(1.86, 0.04, 0.12), M.handrail);
   cap.position.set(4.17, 1.56, ST.z1 + th / 2);
   cap.rotation.z = Math.atan2(0.91, 1.62);
   L.walls.add(cap);
@@ -187,15 +203,15 @@ export function buildWorld(scene) {
   // Sótano
   {
     const L = LV.sot, b = L.base, C = M.concrete;
-    slab(b, -T, W + T, BZ0 - 4.5, BZ1 + T, null, M.slab);
-    floor(b, -T, BZ0 - 4.5, W + T, 3.63, M.garage, 0.004);
-    floor(b, 0, 3.63, W, BZ1, M.wood, 0.004);
+    slab(b, -T, BW + T, BZ0 - 4.5, BZ1 + T, null, M.slab);
+    floor(b, -T, BZ0 - 4.5, BW + T, 3.63, M.garage, 0.004);
+    floor(b, 0, 3.63, BW, BZ1, M.wood, 0.004);
     floor(b, 2.77, BZ0, 2.83, 3.5, M.paint, 0.012);
-    floor(b, 0, BZ0 - 0.06, W, BZ0, M.paint, 0.012);
+    floor(b, 0, BZ0 - 0.06, BW, BZ0, M.paint, 0.012);
     wall(L, 'z', BZ0, BZ1, -T / 2, T, H, [], C);
-    wall(L, 'z', BZ0, BZ1, W + T / 2, T, H, [], C);
-    wall(L, 'x', -T, W + T, BZ1 + T / 2, T, H, [], C);
-    wall(L, 'x', 0, W, 3.63, 0.15, H, [[0.12, 0.95, 0, 2.1, false, 1, 'a']], C);   // garaje | sótano (plaza de 4,95)
+    wall(L, 'z', BZ0, BZ1, BW + T / 2, T, H, [], C);
+    wall(L, 'x', -T, BW + T, BZ1 + T / 2, T, H, [], C);
+    wall(L, 'x', 0, BW, 3.63, 0.15, H, [[0.12, 0.95, 0, 2.1, false, 1, 'a']], C);
     iw(L, 'z', 3.705, 5.37, 1.10);
     iw(L, 'x', 0, 1.14, 5.37, [[0.15, 0.95, -1, 'a']]);
     slopedStairWall(L);
@@ -203,7 +219,7 @@ export function buildWorld(scene) {
     iw(L, 'z', 6.37, BZ1, 1.55);
     // Panel de listones de roble que prolonga el muro de la escalera hasta el vestíbulo.
     const pz = ST.z0 + 1.04;                                                      // eje del muro central de la escalera
-    for (let x = 1.14; x < 3.33; x += 0.065) box(L.walls, x, 0.02, pz - 0.025, Math.min(x + 0.045, 3.36), H - 0.02, pz + 0.025, M.oak);
+    for (let x = 1.14; x < 3.33; x += 0.065) box(L.walls, x, 0.02, pz - 0.025, Math.min(x + 0.045, 3.36), H - 0.02, pz + 0.025, detailedQuality ? M.oakDeep : M.oak);
     box(L.walls, 1.14, 0, pz - 0.03, 3.36, 0.02, pz + 0.03, M.dark);
     box(L.walls, 1.14, H - 0.02, pz - 0.03, 3.36, H, pz + 0.03, M.dark);
     L.rec.push({ axis: 'x', a: 1.14, b: 3.36, c: pz, th: 0.05, kind: 'solid' });
@@ -215,15 +231,18 @@ export function buildWorld(scene) {
     F(L, Fu.bicycle(0xb8452a), 3.3, 3.89);
     F(L, Fu.bicycle(0x2f6fb5), 3.3, 4.42);
     F(L, Fu.studyDesk(3.9, 0.7, [0xb8452a, 0x2f6fb5]), 3.55, 10.05, Math.PI);
-    F(L, Fu.rug(2.2, 2.2, 0x6d7a86), W - 2.35, 7.25, Math.PI / 2);
-    F(L, Fu.woodUnit(2.0, 0.42, 0.42), W - 0.21, 7.25, -Math.PI / 2);
-    F(L, Fu.tvPanel(1.66, 0.95, 0.95), W - 0.04, 7.25, -Math.PI / 2);
+    F(L, Fu.rug(2.2, 2.2, 0x6d7a86), BW - 2.35, 7.25, Math.PI / 2);
+    F(L, Fu.woodUnit(2.0, 0.42, 0.42, detailedQuality ? M.oakDeep : M.oak), BW - 0.21, 7.25, -Math.PI / 2);
+    F(L, Fu.tvPanel(1.66, 0.95, 0.95), BW - 0.04, 7.25, -Math.PI / 2);
     const console = grp();
     rbox(console, -0.22, 0, -0.14, 0.22, 0.07, 0.14, M.black, 0.025);
     box(console, -0.14, 0.045, 0.141, 0.14, 0.052, 0.144, M.dark);
     cyl(console, 0.012, 0.012, 0.008, 0.17, 0.04, 0.145, M.tv, 12);
-    put(L.furn, console, W - 0.21, 7.25, -Math.PI / 2, 0.53);
-    F(L, Fu.sofa(1.85, 0.82, M.fabricGrey), W - 2.35, 7.45, Math.PI / 2);
+    put(L.furn, console, BW - 0.21, 7.25, -Math.PI / 2, 0.53);
+    const sofa = detailedQuality && hasModel('Sofa_01')
+      ? model('Sofa_01', { size: [1.85, 0.7, 0.82] })
+      : Fu.sofa(1.85, 0.82, M.fabricGrey);
+    F(L, sofa, BW - 2.35, 7.45, Math.PI / 2);
     F(L, Fu.shelving(3.8, 0.42, 2.0), 0.3, 8.4, Math.PI / 2);
   }
 
@@ -266,12 +285,12 @@ export function buildWorld(scene) {
 
     // salón y comedor
     F(L, Fu.rug(2.6, 2.9, 0xd9d0c0), 4.1, 7.85);
-    F(L, Fu.woodUnit(2.0, 0.4, 0.45), W - 0.2, 7.8, -Math.PI / 2);
+    F(L, Fu.woodUnit(2.0, 0.4, 0.45, detailedQuality ? M.oakDeep : M.oak), W - 0.2, 7.8, -Math.PI / 2);
     F(L, Fu.tvPanel(1.45, 0.83, 1.05), W - 0.036, 7.8, -Math.PI / 2);
     F(L, Fu.lSofa(M.fabricBeige), 3.225, 7.85, Math.PI / 2);
     if (AUDIT) { L.items.pop(); item(L, 'sofá en L: tramo principal', 2.75, 0, 6.55, 3.7, 0.9, 9.15); item(L, 'sofá en L: chaise', 3.7, 0, 6.55, 4.4, 0.6, 7.45); }
     F(L, Fu.coffeeTable(1.0, 0.6), 4.35, 8.25, Math.PI / 2);
-    const din = F(L, Fu.dining(0.9, 1.8, 3, M.oak, M.fabricBeige), 1.4, 7.65);
+    const din = diningSet(L, 0.9, 1.8, 3, 1.4, 7.65);
     Fu.vase(din, 0, 0.75, 0, 1.1);
     Fu.pendant(L.furn, 1.4, 7.2, 1.75);
     Fu.pendant(L.furn, 1.4, 8.1, 1.75);
@@ -481,10 +500,10 @@ function screenPanel(g, axis, c, a, b, y0, y1) {
 function kitchen(L) {
   const g = L.furn, d = 0.62, z0 = 1.67, z1 = 5.0;
   box(g, 0, 0, z0, d - 0.06, 0.1, z1, M.dark);
-  box(g, 0, 0.1, z0, d - 0.02, 0.88, z1, M.lacq);
+  box(g, 0, 0.1, z0, d - 0.02, 0.88, z1, M.cabinet);
   rbox(g, 0, 0.88, z0, d, 0.92, z1, M.quartz, 0.004);
   box(g, d - 0.06, 0, z0, 0.96, 0.1, 2.23, M.dark);
-  box(g, d - 0.02, 0.1, z0, 0.96, 0.88, 2.29, M.lacq);
+  box(g, d - 0.02, 0.1, z0, 0.96, 0.88, 2.29, M.cabinet);
   rbox(g, d, 0.88, z0, 0.97, 0.92, 2.29, M.quartz, 0.004);
   // frigorífico americano de 0,90 m al final de la L
   rbox(g, 0.98, 0, z0 + 0.01, 1.88, 1.82, 2.4, M.steel, 0.025);
@@ -498,13 +517,13 @@ function kitchen(L) {
   rbox(g, 0.06, 1.2, 2.78, 0.22, 1.24, 2.82, M.steel, 0.01);
   rbox(g, 0.07, 0.92, 3.6, 0.55, 0.928, 4.2, M.black, 0.004);
   // muebles altos y campana
-  box(g, 0, 1.5, z0, 0.35, 2.25, 3.5, M.lacq);
-  box(g, 0, 1.5, 4.3, 0.35, 2.25, z1, M.lacq);
+  box(g, 0, 1.5, z0, 0.35, 2.25, 3.5, M.cabinet);
+  box(g, 0, 1.5, 4.3, 0.35, 2.25, z1, M.cabinet);
   for (let z = z0 + 0.6; z < 3.5; z += 0.6) box(g, 0.35, 1.52, z - 0.003, 0.352, 2.23, z + 0.003, M.dark);
   rbox(g, 0, 1.58, 3.55, 0.5, 1.7, 4.25, M.steel, 0.01);
   box(g, 0, 1.7, 3.75, 0.28, 2.6, 4.05, M.steel);
   // columnas de horno y despensa
-  box(g, 0, 0, z1, 0.64, 2.25, 5.81, M.lacq);                         // torre de horno + microondas integrado
+  box(g, 0, 0, z1, 0.64, 2.25, 5.81, M.cabinet);                     // torre de horno + microondas integrado
   // columna de obra (el mismo pilar que en el vestidor de arriba)
   box(L.walls, 0, 0, 5.81, 0.65, H, 6.30, M.wall);
   L.rec.push({ axis: 'x', a: 0, b: 0.65, c: 6.055, th: 0.49, kind: 'solid' });
@@ -523,7 +542,7 @@ function kitchen(L) {
   item(L, 'cocina: torre de horno', 0, 0, z1, 0.65, 2.25, 5.81);
   item(L, 'cocina: altos y campana', 0, 1.5, z0, 0.5, 2.6, z1);
   box(g, 1.655, 0, 3.35, 2.035, 0.1, 5.35, M.dark);
-  box(g, 1.645, 0.1, 3.35, 2.045, 0.88, 5.35, M.oak);
+  box(g, 1.645, 0.1, 3.35, 2.045, 0.88, 5.35, M.cabinet);
   rbox(g, 1.62, 0.88, 3.35, 2.07, 0.91, 5.35, M.quartz, 0.006);
   for (let z = 3.35 + 0.4; z < 5.35; z += 0.4) for (const x of [1.642, 2.048]) box(g, x - 0.004, 0.12, z - 0.003, x + 0.004, 0.86, z + 0.003, M.dark);
   fruitBowl(g, 1.845, 0.91, 4.35);

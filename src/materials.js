@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { lite } from './config.js';
+import { lite, coarse, detailedQuality } from './config.js';
 
 // Texturas CC0 de Poly Haven; se descargan con `npm run textures`.
 const loader = new THREE.TextureLoader();
@@ -9,15 +9,21 @@ const texCache = new Map();
 export const allTextures = () => [...texCache.values()];
 
 // En escritorio, las superficies más visibles usan texturas 2K.
-const HI = new Set(['wood', 'porc', 'plaster', 'roof', 'pave', 'grass', 'asphalt', 'oak', 'fabric', 'plinth']);
-const texUrl = (key, map) => `${BASE}${!lite && HI.has(key) ? 'tex2k' : 'tex'}/${key}/${map}.jpg`;
+const HI = new Set(['wood', 'porc', 'plaster', 'roof', 'pave', 'grass', 'asphalt', 'oak', 'fabric', 'plinth', 'bath', 'wallTile', 'garage']);
+const HI4K = new Set(['plaster', 'oak']);
+const texUrl = (key, map) => {
+  const res = detailedQuality && !coarse && HI4K.has(key) && map === 'diff'
+    ? 'tex4k'
+    : !lite && HI.has(key) ? 'tex2k' : 'tex';
+  return `${BASE}${res}/${key}/${map}.jpg`;
+};
 
 function tex(key, map, repeat = 1) {
   const id = `${key}/${map}/${repeat}`;
   if (texCache.has(id)) return texCache.get(id);
   const t = loader.load(texUrl(key, map));
   t.wrapS = t.wrapT = THREE.RepeatWrapping;
-  t.anisotropy = 8;
+  t.anisotropy = detailedQuality ? 16 : 8;
   if (repeat !== 1) t.repeat.set(repeat, repeat);
   if (map === 'diff') t.colorSpace = THREE.SRGBColorSpace;
   texCache.set(id, t);
@@ -25,11 +31,11 @@ function tex(key, map, repeat = 1) {
 }
 
 // Material PBR. ts = metros que cubre la textura (las UV se generan a escala real).
-function pbr(key, { color = 0xffffff, rough = 1, ns = 1, ts = 1, diff = true, arm = true, ao = 0.7, physical = false, ...o } = {}) {
+function pbr(key, { color = 0xffffff, rough = 1, ns = 1, ts = 1, diff = true, nor = true, arm = true, ao = 0.7, physical = false, ...o } = {}) {
   const C = physical ? THREE.MeshPhysicalMaterial : THREE.MeshStandardMaterial;
   const m = new C({ color, roughness: rough, metalness: 0, ...o });
   if (diff) m.map = tex(key, 'diff');
-  m.normalMap = tex(key, 'nor');
+  if (nor) m.normalMap = tex(key, 'nor');
   m.normalScale.set(ns, ns);
   if (arm) { const a = tex(key, 'arm'); m.roughnessMap = a; m.aoMap = a; m.aoMapIntensity = ao; }
   m.userData.ts = ts;
@@ -38,11 +44,14 @@ function pbr(key, { color = 0xffffff, rough = 1, ns = 1, ts = 1, diff = true, ar
 
 // Aclara el difuso sin perder los matices de la textura.
 function softened(key, amount, base = 236) {
+  const id = `${key}/soft/${amount}/${base}`;
+  if (texCache.has(id)) return texCache.get(id);
+  const baseColor = Array.isArray(base) ? base : [base, base, base];
   const c = document.createElement('canvas');
   c.width = c.height = 1;
   const t = new THREE.CanvasTexture(c);
   t.wrapS = t.wrapT = THREE.RepeatWrapping;
-  t.anisotropy = 8;
+  t.anisotropy = detailedQuality ? 16 : 8;
   t.colorSpace = THREE.SRGBColorSpace;
   new THREE.ImageLoader().load(texUrl(key, 'diff'), img => {
     c.width = img.width; c.height = img.height;
@@ -52,11 +61,11 @@ function softened(key, amount, base = 236) {
     let mean = 0;
     for (let i = 0; i < a.length; i += 4 * 97) mean += (a[i] + a[i + 1] + a[i + 2]) / 3;
     mean /= a.length / (4 * 97);
-    for (let i = 0; i < a.length; i += 4) for (let k = 0; k < 3; k++) a[i + k] = Math.max(0, Math.min(255, base + (a[i + k] - mean) * amount));
+    for (let i = 0; i < a.length; i += 4) for (let k = 0; k < 3; k++) a[i + k] = Math.max(0, Math.min(255, baseColor[k] + (a[i + k] - mean) * amount));
     g.putImageData(d, 0, 0);
     t.needsUpdate = true;
   });
-  texCache.set(key + '/soft', t);
+  texCache.set(id, t);
   return t;
 }
 
@@ -88,7 +97,7 @@ function canvasTex(size, draw) {
   draw(c.getContext('2d'), size);
   const t = new THREE.CanvasTexture(c);
   t.wrapS = t.wrapT = THREE.RepeatWrapping;
-  t.anisotropy = 8;
+  t.anisotropy = detailedQuality ? 16 : 8;
   t.colorSpace = THREE.SRGBColorSpace;
   return t;
 }
@@ -152,8 +161,16 @@ const poolTex = canvasTex(512, (g, s) => {
 export const M = {
   marble: Object.assign(new THREE.MeshPhysicalMaterial({ map: marbleTex, roughness: 0.14, clearcoat: 0.6, clearcoatRoughness: 0.15 }), { userData: { ts: 1.2 } }),
   clad: Object.assign(new THREE.MeshStandardMaterial({ map: cladTex, roughness: 0.55 }), { userData: { ts: 2.4 } }),
-  wall: pbr('plaster', { color: 0xf0ece6, ns: 0.6, ts: 2.5, diff: false, map: softened('plaster', 0.2) }),
-  ext: pbr('plaster', { color: 0xf6f3ee, ns: 1.0, ts: 2.5, diff: false, map: softened('plaster', 0.28, 234) }),
+  wall: pbr('plaster', {
+    color: detailedQuality ? 0xffffff : 0xf0ece6, rough: detailedQuality ? 0.97 : 1, ns: detailedQuality ? 0 : 0.6, ts: 2.5,
+    diff: false, nor: !detailedQuality, arm: !detailedQuality,
+    map: softened('plaster', detailedQuality ? 0.04 : 0.2, detailedQuality ? [247, 239, 228] : 236),
+  }),
+  ext: pbr('plaster', {
+    color: detailedQuality ? 0xffffff : 0xf6f3ee, rough: detailedQuality ? 0.97 : 1, ns: detailedQuality ? 0 : 1.0, ts: 2.5,
+    diff: false, nor: !detailedQuality, arm: !detailedQuality,
+    map: softened('plaster', detailedQuality ? 0.04 : 0.28, detailedQuality ? [247, 239, 228] : 234),
+  }),
   plinth: pbr('plinth', { color: 0xf2efe9, ts: 2.0, ns: 1.2 }),
   poolDeck: pbr('porc', { color: 0xfbf7f0, rough: 0.7, ts: 2.4 }),
   poolTile: Object.assign(new THREE.MeshStandardMaterial({ map: poolTex, roughness: 0.2 }), { userData: { ts: 0.75 } }),
@@ -166,9 +183,22 @@ export const M = {
   winDark: mat(0x26303a, { roughness: 0.05, metalness: 0.75 }),
   frame: mat(0x2b2e31, { roughness: 0.4, metalness: 0.5 }), alu: mat(0x3a3d40, { roughness: 0.35, metalness: 0.7 }),
   doorExt: mat(0x3b3d40, { roughness: 0.45, metalness: 0.35 }), shutter: mat(0x8e9296, { roughness: 0.5, metalness: 0.3 }),
-  oak: pbr('oak', { rough: 0.85, ts: 1.2 }), teak: pbr('oak', { color: 0xa8957e, rough: 0.95, ts: 1.2 }),
+  oak: pbr('oak', {
+    rough: 0.85, ts: 1.2,
+    ...(detailedQuality ? { diff: false, map: softened('oak', 0.52, [216, 202, 181]), ns: 0.72 } : {}),
+  }),
+  oakDark: detailedQuality
+    ? pbr('oak', { rough: 0.85, ts: 1.2, diff: false, map: softened('oak', 0.52, [194, 177, 153]), ns: 0.72 })
+    : null,
+  oakDeep: detailedQuality
+    ? pbr('oak', { rough: 0.85, ts: 1.2, diff: false, map: softened('oak', 0.52, [163, 145, 123]), ns: 0.72 })
+    : null,
+  teak: pbr('oak', { color: detailedQuality ? 0xd8c9b0 : 0xa8957e, rough: 0.95, ts: 1.2 }),
   white: mat(0xebebe8, { roughness: 0.25 }), lacq: mat(0xe6e3dd, { roughness: 0.38 }),
-  quartz: new THREE.MeshPhysicalMaterial({ color: 0xf2f0ec, roughness: 0.15, clearcoat: 0.4, clearcoatRoughness: 0.2 }),
+  cabinet: mat(detailedQuality ? 0x9e9588 : 0xe6e3dd, { roughness: detailedQuality ? 0.62 : 0.38 }),
+  quartz: detailedQuality
+    ? pbr('porc', { color: 0xebe1d2, rough: 0.38, ns: 0.45, ts: 1.8, physical: true, clearcoat: 0.18, clearcoatRoughness: 0.32 })
+    : new THREE.MeshPhysicalMaterial({ color: 0xf2f0ec, roughness: 0.15, clearcoat: 0.4, clearcoatRoughness: 0.2 }),
   ceramic: new THREE.MeshPhysicalMaterial({ color: 0xfbfbfa, roughness: 0.08, clearcoat: 1, clearcoatRoughness: 0.05 }),
   dark: mat(0x2c2e31, { roughness: 0.55 }), metal: mat(0xb0b5ba, { roughness: 0.28, metalness: 0.85 }),
   black: mat(0x0f1012, { roughness: 0.12 }), steel: mat(0xc6cacd, { roughness: 0.2, metalness: 0.9 }),
@@ -184,13 +214,23 @@ export const M = {
   door: mat(0xf1efea, { roughness: 0.35 }),
   ground: mat(0xcdc6b6, { roughness: 1 }), under: mat(0x9c958a, { roughness: 1 }),
   water: new THREE.MeshPhysicalMaterial({ color: 0x46b9d8, roughness: 0.03, metalness: 0, transparent: true, opacity: 0.55, envMapIntensity: 1.6, clearcoat: 1, clearcoatRoughness: 0.02 }),
-  linen: fabric(0xeee8dc, 2), fabricBeige: fabric(0xc9b393), fabricGrey: fabric(0x7c8288), fabricOut: fabric(0xe9e4d9),
-  headboard: fabric(0xcbbfab),
-  wood: pbr('wood', { rough: 0.9, ts: 2.0 }),
-  bath: pbr('bath', { color: 0xf2efea, rough: 0.7, ts: 1.6 }), wallTile: pbr('wallTile', { rough: 0.5, ts: 1.4 }),
+  linen: fabric(0xeee8dc, 2), fabricBeige: fabric(detailedQuality ? 0xd1c1a8 : 0xc9b393), fabricGrey: fabric(0x7c8288), fabricOut: fabric(0xe9e4d9),
+  headboard: fabric(detailedQuality ? 0xd7ccbb : 0xcbbfab),
+  wood: pbr('wood', {
+    rough: 0.9, ts: 2.0,
+    ...(detailedQuality ? { diff: false, map: softened('wood', 0.65, [125, 104, 80]), ns: 0.6 } : {}),
+  }),
+  bath: pbr('bath', {
+    color: detailedQuality ? 0xffffff : 0xf2efea, rough: detailedQuality ? 0.74 : 0.7, ts: 1.6,
+    ...(detailedQuality ? { diff: false, map: softened('bath', 0.46, [220, 210, 193]), ns: 0.7 } : {}),
+  }),
+  wallTile: pbr(detailedQuality ? 'bath' : 'wallTile', {
+    rough: detailedQuality ? 0.58 : 0.5, ts: detailedQuality ? 1.6 : 1.4,
+    ...(detailedQuality ? { diff: false, map: softened('bath', 0.46, [220, 210, 193]), ns: 0.7 } : {}),
+  }),
   roof: pbr('roof', { color: 0xf1ece4, ts: 2.4 }),
   pave: pbr('pave', { color: 0xf4efe8, ts: 2.6 }),
-  grass: pbr('grass', { color: 0xc6dc9c, ts: 2.5, ns: 1.2 }), garage: pbr('garage', { ts: 3 }),
+  grass: pbr('grass', { color: detailedQuality ? 0xffffff : 0xc6dc9c, ts: 2.5, ns: 1.2 }), garage: pbr('garage', { ts: 3 }),
   asphalt: pbr('asphalt', { ts: 5 }),
   bark: pbr('bark', { color: 0xb8a58f, ts: 1, arm: false, rough: 0.95 }),
   leaf: new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.85, metalness: 0, map: leafTex }),
@@ -198,3 +238,6 @@ export const M = {
 };
 M.bark.userData.ts = 0;
 M.stair = M.marble;
+M.handrail = detailedQuality
+  ? pbr('oak', { rough: 0.82, ns: 0.72, ts: 1.2, diff: false, map: softened('oak', 0.48, [112, 86, 62]) })
+  : M.oak;

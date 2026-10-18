@@ -4,7 +4,7 @@ import {
   BloomEffect, VignetteEffect, NoiseEffect, ChromaticAberrationEffect, SMAAEffect, SMAAPreset,
 } from 'postprocessing';
 import { N8AOPostPass } from 'n8ao';
-import { lite } from './config.js';
+import { lite, detailedQuality } from './config.js';
 
 // Conserva el color del plano y aplica un tono cálido a la escena construida.
 class FinishEffect extends Effect {
@@ -16,40 +16,47 @@ class FinishEffect extends Effect {
       vec3 aces(vec3 x) { return clamp((x * (2.51 * x + 0.03)) / (x * (2.43 * x + 0.59) + 0.14), 0.0, 1.0); }
       void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor) {
         vec3 c = max(inputColor.rgb, 0.0);
-        vec3 film = aces(c * expo * vec3(1.02, 1.0, 0.97));
+        vec3 film = aces(c * expo${detailedQuality ? '' : ' * vec3(1.02, 1.0, 0.97)'});
+        ${detailedQuality ? '' : `
         float l = dot(film, vec3(0.2126, 0.7152, 0.0722));
         film = mix(vec3(l), film, 1.06);
-        film = film * film * (3.0 - 2.0 * film) * 0.35 + film * 0.65;   // algo más de contraste
+        film = film * film * (3.0 - 2.0 * film) * 0.35 + film * 0.65;`}
         outputColor = vec4(mix(softClip(c), film, built), inputColor.a);
-      }`, { uniforms: new Map([['built', new THREE.Uniform(0)], ['expo', new THREE.Uniform(0.6)]]) });
+      }`, { uniforms: new Map([['built', new THREE.Uniform(0)], ['expo', new THREE.Uniform(detailedQuality ? 0.68 : 0.6)]]) });
   }
 }
 
 export function createPost(renderer, scene, camera) {
-  const composer = new EffectComposer(renderer, { frameBufferType: THREE.HalfFloatType, multisampling: 0 });
+  const composer = new EffectComposer(renderer, {
+    frameBufferType: THREE.HalfFloatType,
+    multisampling: detailedQuality && renderer.capabilities.isWebGL2 ? 4 : 0,
+  });
   composer.addPass(new RenderPass(scene, camera));
 
   let ao = null;
   if (!lite) {
     ao = new N8AOPostPass(scene, camera, 1, 1);
     Object.assign(ao.configuration, {
-      screenSpaceRadius: true, aoRadius: 34, distanceFalloff: 0.22, intensity: 2.6,
+      screenSpaceRadius: true,
+      aoRadius: detailedQuality ? 12 : 34,
+      distanceFalloff: 0.22,
+      intensity: detailedQuality ? 1.1 : 2.6,
       transparencyAware: false, gammaCorrection: false, halfRes: false,
     });
-    ao.setQualityMode('Medium');
+    ao.setQualityMode(detailedQuality ? 'Ultra' : 'Medium');
     composer.addPass(ao);
   }
 
   const finish = new FinishEffect();
-  const bloom = new BloomEffect({ mipmapBlur: true, intensity: 0.35, luminanceThreshold: 1.0, luminanceSmoothing: 0.2, radius: 0.72 });
+  const bloom = new BloomEffect({ mipmapBlur: true, intensity: detailedQuality ? 0.08 : 0.35, luminanceThreshold: 1.0, luminanceSmoothing: 0.2, radius: 0.72 });
   composer.addPass(new EffectPass(camera, bloom, finish));
   const smaa = new EffectPass(camera, new SMAAEffect({ preset: SMAAPreset.HIGH }));
   composer.addPass(smaa);
 
   const grain = new NoiseEffect({ premultiply: false, blendFunction: BlendFunction.OVERLAY });
-  grain.blendMode.opacity.value = 0.09;
-  const vignette = new VignetteEffect({ offset: 0.3, darkness: 0.42 });
-  const chroma = new ChromaticAberrationEffect({ offset: new THREE.Vector2(0.0006, 0.0006), radialModulation: true, modulationOffset: 0.35 });
+  grain.blendMode.opacity.value = detailedQuality ? 0 : 0.09;
+  const vignette = new VignetteEffect({ offset: 0.3, darkness: detailedQuality ? 0 : 0.42 });
+  const chroma = new ChromaticAberrationEffect({ offset: new THREE.Vector2(detailedQuality ? 0 : 0.0006, detailedQuality ? 0 : 0.0006), radialModulation: true, modulationOffset: 0.35 });
   composer.addPass(new EffectPass(camera, chroma, vignette, grain));
 
   return {
@@ -57,8 +64,8 @@ export function createPost(renderer, scene, camera) {
     setBuilt(v) {
       finish.uniforms.get('built').value = v;
       // SMAA difumina las etiquetas del plano; se activa solo en la vista construida.
-      grain.blendMode.opacity.value = 0.06 + 0.01 * v;
-      chroma.offset.set(0.0006 * v, 0.0006 * v);
+      grain.blendMode.opacity.value = detailedQuality ? 0 : 0.06 + 0.01 * v;
+      chroma.offset.set((detailedQuality ? 0 : 0.0006) * v, (detailedQuality ? 0 : 0.0006) * v);
       smaa.enabled = v > 0.001;
     },
   };

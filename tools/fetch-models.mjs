@@ -14,6 +14,7 @@ const MODELS = {
   searsia_lucida: [1024, 0.2],
   exterior_aircon_unit: [1024, 1], ceramic_vase_01: [512, 1],
   outdoor_table_chair_set_01: [1024, 1], modular_street_seating: [1024, 1],
+  Sofa_01: [2048, 0.85], dining_table: [2048, 0.9], dining_chair_02: [2048, 0.9],
 };
 const json = async u => { const r = await fetch(u); if (!r.ok) throw new Error(`${r.status} ${u}`); return r.json(); };
 const bin = async u => { const r = await fetch(u); if (!r.ok) throw new Error(`${r.status} ${u}`); return Buffer.from(await r.arrayBuffer()); };
@@ -23,7 +24,7 @@ const only = process.argv.slice(2);   // opcional: npm run models -- id1 id2
 for (const [id, [tsize, ratio]] of Object.entries(MODELS)) {
   if (only.length && !only.includes(id)) continue;
   const files = await json(`https://api.polyhaven.com/files/${id}`);
-  const g = files.gltf?.['1k']?.gltf;
+  const g = (files.gltf?.['2k'] || files.gltf?.['1k'])?.gltf;
   if (!g) { console.warn('✗ sin glTF', id); continue; }
   const dir = join(tmpdir(), 'ph-models', id);
   await rm(dir, { recursive: true, force: true });

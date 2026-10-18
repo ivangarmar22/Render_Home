@@ -1,55 +1,78 @@
 import * as THREE from 'three';
-import { W, D, T, BZ0, BZ1, GZ, OV } from './config.js';
+import { W, BW, D, T, BZ0, BZ1, GZ, OV } from './config.js';
 import { LV } from './house.js';
 
 const INK = '#1d1d1f';
+const GARAGE_WIDTH = 2.80 + 2.93;
 
-const ROOMS = [
-  { lvl: 'baja', name: 'Aseo', area: '3,03 m²', dims: '1,86 × 1,59', r: [0, 0, 1.86, 1.59], lp: [0.93, 0.7], fs: 0.75 },
-  { lvl: 'baja', name: 'Recibidor', area: '', dims: '', r: [1.94, 0, 3.28, 1.67], lp: [2.45, 1.35], fs: 0.7 },
-  { lvl: 'baja', name: 'Despacho', area: '8,05 m²', dims: '2,18 × 3,67', r: [3.36, 0, W, 3.62], lp: [4.6, 2.55], fs: 0.8 },
+export const ROOMS = [
+  { lvl: 'baja', name: 'Aseo', area: '', dims: '1,86 × 1,59', r: [0, 0, 1.86, 1.59], lp: [0.93, 0.7], fs: 0.75 },
+  { lvl: 'baja', name: 'Recibidor', area: '', dims: '1,30 × 1,67', r: [1.94, 0, 3.28, 1.67], lp: [2.45, 1.35], fs: 0.7 },
+  { lvl: 'baja', name: 'Despacho', area: '', dims: '2,18 × 3,67', r: [3.36, 0, W, 3.62], lp: [4.6, 2.55], fs: 0.8 },
   { lvl: 'baja', name: 'Cocina', area: '', dims: '', r: [0, 1.67, 1.0, 5.0], lp: [1.25, 4.8], fs: 0.75 },
   { lvl: 'baja', name: 'Salón-comedor-cocina', area: '35,26 m²', dims: '5,54 × 3,56', r: [0, 5.91, W, D], lp: [2.3, 9.25], fs: 0.8 },
-  { lvl: 'baja', name: 'Terraza', area: '17,20 m²', dims: '5,62 × 3,00', r: [-T, GZ, W + T, GZ + 3], lp: [2.75, GZ + 2.75], out: true },
-  { lvl: 'baja', name: 'Jardín', area: '22,94 m²', dims: '5,62 × 4,05', r: [-T, GZ + 3, W + T, GZ + 7.05], lp: [1.9, GZ + 5.0], out: true },
+  { lvl: 'baja', name: 'Terraza', area: '', dims: '5,62 × 3,00', r: [-T, GZ, W + T, GZ + 3], lp: [2.75, GZ + 2.75], out: true },
+  { lvl: 'baja', name: 'Jardín', area: '', dims: '5,62 × 4,05', r: [-T, GZ + 3, W + T, GZ + 7.05], lp: [1.9, GZ + 5.0], out: true },
   { lvl: 'baja', name: 'Calle peatonal', area: '', dims: '', r: [-T, -4.4, W + T, -T], lp: [1.6, -3.6], out: true, fs: 0.8 },
-  { lvl: 'pri', name: 'Dormitorio 1', area: '14,95 m²', dims: '3,15 × 3,63', r: [2.44, 5.84, W, D], lp: [3.4, 9.1], fs: 0.85 },
+  { lvl: 'pri', name: 'Dormitorio principal', area: '', dims: '3,15 × 3,63', r: [2.44, 5.84, W, D], lp: [3.4, 9.1], fs: 0.85 },
   { lvl: 'pri', name: 'Vestidor', area: '', dims: '2,36 × 1,61', r: [0, 5.81, 2.36, 7.445], lp: [1.4, 6.7], fs: 0.6 },
-  { lvl: 'pri', name: 'Dormitorio 2', area: '10,85 m²', dims: '3,15 × 2,98', r: [2.44, 0, W, 2.98], lp: [3.65, 2.65], fs: 0.8 },
-  { lvl: 'pri', name: 'Dormitorio 3', area: '9,29 m²', dims: '2,36 × 3,30', r: [0, 0, 2.36, 3.28], lp: [1.2, 0.55], fs: 0.8 },
-  { lvl: 'pri', name: 'Baño 1', area: '4,41 m²', dims: '2,26 × 1,93', r: [0, 7.525, 2.36, D], lp: [1.55, 8.6], fs: 0.7 },
-  { lvl: 'pri', name: 'Baño 2', area: '3,87 m²', dims: '2,30 × 1,65', r: [0, 4.04, 2.36, 5.73], lp: [1.45, 4.5], fs: 0.7 },
+  { lvl: 'pri', name: 'Dormitorio 2', area: '', dims: '3,15 × 2,98', r: [2.44, 0, W, 2.98], lp: [3.65, 2.65], fs: 0.8 },
+  { lvl: 'pri', name: 'Dormitorio 3', area: '', dims: '2,36 × 3,30', r: [0, 0, 2.36, 3.28], lp: [1.2, 0.55], fs: 0.8 },
+  { lvl: 'pri', name: 'Baño 1', area: '', dims: '2,26 × 1,93', r: [0, 7.525, 2.36, D], lp: [1.55, 8.6], fs: 0.7 },
+  { lvl: 'pri', name: 'Baño 2', area: '', dims: '2,30 × 1,65', r: [0, 4.04, 2.36, 5.73], lp: [1.45, 4.5], fs: 0.7 },
   { lvl: 'pri', name: 'Pasillo', area: '2,50 m²', dims: '', r: [2.44, 3.06, 3.28, 5.76], lp: [2.86, 5.3], fs: 0.55 },
-  { lvl: 'cub', name: 'Solárium', area: '45,58 m²', dims: '', r: [0, 6.11, W, D + OV], lp: [2.6, 9.6] },
-  { lvl: 'cub', name: 'Porche bioclimático', area: '', dims: '', r: [0, -OV, W, 3.59], lp: [2.8, 2.6], fs: 0.75 },
-  { lvl: 'cub', name: 'Casetón', area: '1,58 m²', dims: '', r: [2.3, 3.70, W, 5.99], lp: [4.2, 6.45], fs: 0.6 },
+  { lvl: 'cub', name: 'Solárium', area: '45,58 m²', dims: '5,54 × 11,36', r: [0, -OV, W, D + OV], lp: [2.6, 9.6] },
+  { lvl: 'cub', name: 'Porche bioclimático', area: '', dims: '5,54 × 4,40', r: [0, -OV, W, 3.59], lp: [2.8, 2.6], fs: 0.75 },
+  { lvl: 'cub', name: 'Casetón', area: '', dims: '2,25 × 2,57', r: [W - 2.25, 3.59, W, 6.16], lp: [4.2, 4.9], fs: 0.6 },
   { lvl: 'sot', name: 'Plaza A', area: '14,47 m²', dims: '2,80 × 5,17', r: [0, BZ0, 2.80, 3.555], lp: [1.4, 3.25], fs: 0.8 },
-  { lvl: 'sot', name: 'Plaza B', area: '14,50 m²', dims: '2,93 × 4,95', r: [2.80, BZ0, W, 3.555], lp: [4.17, 3.25], fs: 0.8 },
+  { lvl: 'sot', name: 'Plaza B', area: '14,50 m²', dims: '2,93 × 4,95', r: [2.80, BZ0, GARAGE_WIDTH, 3.555], lp: [4.17, 3.25], fs: 0.8 },
   { lvl: 'sot', name: 'Vestíbulo', area: '1,95 m²', dims: '', r: [0, 3.705, 1.06, 5.33], lp: [0.55, 4.6], fs: 0.55 },
   { lvl: 'sot', name: 'Juegos', area: '', dims: '', r: [0, 5.4, 2.4, 9.0], lp: [1.3, 6.1], fs: 0.75 },
   { lvl: 'sot', name: 'Estudio', area: '', dims: '', r: [3.4, 6.0, W, 9.0], lp: [4.0, 6.35], fs: 0.75 },
   { lvl: 'sot', name: 'Aerotermia', area: '', dims: '', r: [1.14, 3.705, 3.32, 4.715], lp: [2.3, 4.3], fs: 0.5 },
-  { lvl: 'sot', name: 'Trastero', area: '7,81 m²', dims: '5,54 × 1,41', r: [0, 9.08, W, BZ1], lp: [1.6, 9.85] },
+  { lvl: 'sot', name: 'Trastero', area: '', dims: '5,66 × 1,41', r: [0, BZ1 - 1.41, BW, BZ1], lp: [1.6, 9.85] },
   { lvl: 'sot', name: 'Calle de garaje', area: '', dims: '', r: [-T, BZ0 - 4.5, W + T, BZ0], lp: [2.75, BZ0 - 2.2], out: true, fs: 0.8 },
 ];
 const COTAS = {
   baja: [[0, -0.7, 1.86, -0.7, '1,86'], [1.94, -0.7, 3.28, -0.7, '1,30'], [3.36, -0.7, W, -0.7, '2,18'], [-0.7, 0, -0.7, 1.59, '1,59'], [-0.7, 1.67, -0.7, D, '7,78'],
-    [W + 0.7, 0, W + 0.7, 3.62, '3,67'], [W + 0.7, 5.91, W + 0.7, D, '3,56'], [0, D + 0.7, W, D + 0.7, '5,54'],
+    [W + 0.7, 0, W + 0.7, 3.67, '3,67'], [W + 0.7, 5.91, W + 0.7, D, '3,56'], [0, D + 0.7, W, D + 0.7, '5,54'],
     [W + 0.7, GZ, W + 0.7, GZ + 3, '3,00'], [W + 0.7, GZ + 3, W + 0.7, GZ + 7.05, '4,05']],
   pri: [[0, -0.7, 2.36, -0.7, '2,36'], [2.44, -0.7, W, -0.7, '3,15'], [-0.7, 0, -0.7, 3.3, '3,30'],
     [-0.7, 4.04, -0.7, 5.73, '1,65'], [-0.7, 5.81, -0.7, 7.445, '1,61'], [-0.7, 7.525, -0.7, D, '1,93'],
     [W + 0.7, 0, W + 0.7, 2.98, '2,98'], [W + 0.7, 5.84, W + 0.7, D, '3,63'], [2.44, D + 0.7, W, D + 0.7, '3,15']],
   cub: [[0, -OV - 0.5, W, -OV - 0.5, '5,54'], [-0.7, -OV, -0.7, D + OV, '11,36'], [W + 0.7, 3.59, W + 0.7, 6.11, '2,57'], [0, 3.2, 2.24, 3.2, '2,25']],
-  sot: [[0, BZ0 - 0.7, 2.8, BZ0 - 0.7, '2,80'], [2.8, BZ0 - 0.7, W, BZ0 - 0.7, '2,93'],
-    [W + 0.7, 3.705, W + 0.7, BZ1, '6,75'], [-0.7, 9.08, -0.7, BZ1, '1,41'], [0, BZ1 + 0.7, W, BZ1 + 0.7, '5,54'], [-0.7, 3.705, -0.7, 5.37, '1,62']],
+  sot: [[0, BZ0 - 0.7, 2.8, BZ0 - 0.7, '2,80'], [2.8, BZ0 - 0.7, GARAGE_WIDTH, BZ0 - 0.7, '2,93'],
+    [BW + 0.7, 3.705, BW + 0.7, BZ1, '6,75'], [-0.7, BZ1 - 1.41, -0.7, BZ1, '1,41'], [0, BZ1 + 0.7, BW, BZ1 + 0.7, '5,66'], [-0.7, 3.705, -0.7, 5.37, '1,62']],
 };
 const SHEETS = {
   baja: [-1.4, -4.6, W + 1.4, GZ + 7.9],
   pri: [-1.4, -1.5, W + 1.4, D + 1.4],
   cub: [-1.4, -2.0, W + 1.4, D + 1.9],
-  sot: [-1.4, BZ0 - 5.2, W + 1.4, BZ1 + 1.5],
+  sot: [-1.4, BZ0 - 5.2, GARAGE_WIDTH + 1.4, BZ1 + 1.5],
 };
-const TITLES = { baja: 'PLANTA BAJA', pri: 'PLANTA PRIMERA', cub: 'SOLÁRIUM', sot: 'PLANTA BAJO RASANTE' };
+export const PLAN_LEVELS = [
+  ['sot', 'Planta bajo rasante'],
+  ['baja', 'Planta baja'],
+  ['pri', 'Planta primera'],
+  ['cub', 'Planta cubierta'],
+];
+const TITLES = { baja: 'PLANTA BAJA', pri: 'PLANTA PRIMERA', cub: 'PLANTA CUBIERTA', sot: 'PLANTA BAJO RASANTE' };
+
+const number = value => (Math.round((value + Number.EPSILON * Math.abs(value)) * 100) / 100).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+export function roomMeasurements(room) {
+  const [x0, z0, x1, z1] = room.r;
+  const match = room.dims?.match(/([\d,]+)\s*×\s*([\d,]+)/);
+  const width = match ? Number(match[1].replace(',', '.')) : x1 - x0;
+  const length = match ? Number(match[2].replace(',', '.')) : z1 - z0;
+  const dims = room.dims || (room.out && !room.area ? '' : `${number(width)} × ${number(length)}`);
+  const area = room.area || (room.out ? '' : `${number(width * length)} m²`);
+  return {
+    area,
+    dims,
+    estimated: !room.area && Boolean(area),
+    estimatedDims: !room.dims && Boolean(dims),
+  };
+}
 
 function drawSheet(L, maxAniso, maxTex) {
   const [x0, z0, x1, z1] = SHEETS[L.k], s = 110;
@@ -124,12 +147,13 @@ function drawSheet(L, maxAniso, maxTex) {
   ROOMS.filter(r => r.lvl === L.k).forEach(rm => {
     const [a, b, cc, d] = rm.r, [lx, lz] = rm.lp || [(a + cc) / 2, (b + d) / 2], fs = rm.fs || 1;
     const px = X(lx), py = Z(lz);
+    const { area, dims, estimated } = roomMeasurements(rm);
     g.fillStyle = INK;
     g.font = serif(Math.round(36 * fs));
     g.fillText(rm.name, px, py);
     g.fillStyle = 'rgba(29,29,31,.86)';
     g.font = mono(Math.round(17 * fs));
-    const sub = [rm.area, rm.dims && rm.dims + ' m'].filter(Boolean).join(' · ');
+    const sub = [area && `${estimated ? '≈ ' : ''}${area}`, dims && dims + ' m'].filter(Boolean).join(' · ');
     if (sub) g.fillText(sub, px, py + 22 * fs);
   });
 

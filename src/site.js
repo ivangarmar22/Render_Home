@@ -181,7 +181,7 @@ export function buildSite(L) {
   for (let z = -20; z < 18; z += 9) streetTree(f, 63.2, z);
   for (let x = -20; x < 60; x += 18) { put(f, streetLight(), x, -26.3, Math.PI); put(f, streetLight(), x + 9, 18.6, 0); }
   // coches aparcados en la calle
-  const parked = [[Fu.bmwX3, 0x1d2a3a], [Fu.mondeoMk3, 0x8c9196], [Fu.bmwX3, 0xc7c9c8], [Fu.mondeoMk3, 0x6b1f22], [Fu.bmwX3, 0x2b2d30], [Fu.mondeoMk3, 0xe8e6e1]];
+  const parked = [[Fu.bmwX3, 0x1d2a3a], [Fu.mondeoMk3, 0x9da2a5], [Fu.bmwX3, 0xc7c9c8], [Fu.mondeoMk3, 0x6b1f22], [Fu.bmwX3, 0x2b2d30], [Fu.mondeoMk3, 0xe8e6e1]];
   parked.forEach(([fn, col], i) => {
     const south = i % 2 === 0, x = -14 + i * 11;
     put(f, fn(col), x, south ? 20.85 : -36.05, south ? Math.PI / 2 : -Math.PI / 2);
@@ -194,15 +194,13 @@ export function buildSite(L) {
   fenceLine(w, PX_WS, PZ_S, PX_E, PZ_S);                                                      // sur (calle Corea)
   fenceLine(w, PX_WN, PZ_N, PX_WS, PZ_S, [[tWest(-6.3), tWest(-5.0)]]);                       // oeste (avda. de China)
 
-  // acceso peatonal (calle India): pilares, cancela, muro técnico con buzones y contadores, pérgola
+  // acceso peatonal (calle India): pilares, cancela y muro técnico con buzones y contadores
   pier(w, PX_E, WALK[0] - 0.22);
   pier(w, PX_E, WALK[1] + 0.22);
   const gate = grp(); bars(gate, 0, 1.0, 0.05, 1.95); put(w, gate, PX_E, WALK[0], -Math.PI / 2);
   rbox(w, PX_E - 0.4, 0, -7.55, PX_E + 0.14, 2.1, WALK[0] - 0.45, M.ext, 0.02);
   for (const [z0, z1] of [[-7.4, -6.7], [-6.6, -5.9], [-5.8, -5.2]]) box(w, PX_E + 0.14, 0.4, z0, PX_E + 0.16, 1.7, z1, M.shutter);
   for (let i = 0; i < 5; i++) for (let j = 0; j < 4; j++) box(w, PX_E - 0.42, 0.7 + j * 0.3, -7.4 + i * 0.36, PX_E - 0.4, 0.96 + j * 0.3, -7.08 + i * 0.36, M.doorExt);
-  for (const [x, z] of [[PX_E - 0.2, WALK[0] - 0.3], [PX_E - 2.6, WALK[0] - 0.3], [PX_E - 0.2, WALK[1] + 0.3], [PX_E - 2.6, WALK[1] + 0.3]]) box(w, x - 0.05, 0, z - 0.05, x + 0.05, 2.7, z + 0.05, M.alu);
-  for (let x = PX_E - 2.6; x < PX_E; x += 0.18) box(w, x, 2.7, WALK[0] - 0.35, x + 0.06, 2.8, WALK[1] + 0.35, M.alu);
   oliveTree(f, PX_E - 1.7, -12, 0.85, false);
   oliveTree(f, PX_E - 1.7, 6, 0.85, false);
 
@@ -236,14 +234,7 @@ export function buildSite(L) {
     box(b, x0, -2.0, RAMP[3], x1, -0.35, RAMP[3] + 3, mat(0x060606, { roughness: 1 }));  // boca del garaje
   }
 
-  // Calle peatonal, pérgola y balizas
-  const YP = 2.75, Z1 = WALK[0] + 0.06, Z2 = WALK[1] - 0.06;
-  for (let x = XW + 1.5; x <= PX_E - 2.5; x += 4.2) {
-    if (x > RAMP[0] - 0.5 && x < RAMP[2] + 0.5) continue;
-    for (const z of [Z1, Z2]) box(w, x - 0.05, 0, z - 0.05, x + 0.05, YP, z + 0.05, M.alu);
-  }
-  for (const z of [Z1, Z2]) box(w, XW + 1.4, YP, z - 0.06, PX_E - 2.4, YP + 0.16, z + 0.06, M.alu);
-  for (let x = XW + 1.5; x <= PX_E - 2.5; x += 0.42) box(w, x - 0.02, YP + 0.16, Z1 - 0.2, x + 0.02, YP + 0.28, Z2 + 0.2, M.alu);
+  // Calle peatonal y balizas
   for (let x = XW + 3.5; x < PX_E - 3; x += 6.5) for (const z of [WALK[0] + 0.18, WALK[1] - 0.18]) put(f, Fu.bollard(), x, z);
 
   // Piscina comunitaria
@@ -294,15 +285,12 @@ export function buildSite(L) {
   oliveTree(f, -16.3, -14.2, 0.85, true);
   for (let z = -2; z < 16; z += 3.4) bush(f, -29.6 + (z + 2) * 0.12, z, 1, false);
 
-  // pabellón de aseos con pérgola y zona de estar
+  // pabellón de aseos y zona de estar
   rbox(w, -17.77, 0, -12.59, -14.86, 2.8, -6.4, M.ext, 0.02);
   box(w, -17.95, 2.8, -12.75, -14.7, 3.0, -6.25, M.band);
   for (const z of [-11.8, -10.2, -8.6]) box(w, -17.8, 0, z, -17.77, 2.1, z + 0.85, M.doorExt);
   for (const z of [-12.2, -7.4]) box(w, -14.86, 2.0, z, -14.83, 2.5, z + 0.7, M.winDark);
   floor(b, -23.44, -12.59, -17.77, -6.4, M.poolDeck, 0.014);
-  for (const [x, z] of [[-23.3, -12.45], [-23.3, -6.55], [-17.95, -12.45], [-17.95, -6.55]]) box(w, x - 0.06, 0, z - 0.06, x + 0.06, 2.7, z + 0.06, M.alu);
-  for (const z of [-12.45, -6.55]) box(w, -23.36, 2.7, z - 0.06, -17.89, 2.86, z + 0.06, M.alu);
-  for (let x = -23.2; x < -17.95; x += 0.3) box(w, x, 2.86, -12.5, x + 0.08, 2.94, -6.5, M.alu);
   put(f, Fu.outdoorSofa(1.8, 0.85), -21.2, -12.0);
   put(f, Fu.outdoorSofa(0.8, 0.8), -22.7, -10.6, Math.PI / 2);
   put(f, Fu.outdoorSofa(0.8, 0.8), -19.7, -10.6, -Math.PI / 2);

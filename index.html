@@ -19,6 +19,25 @@
   </div>
   <div class="lost">La tarjeta gráfica se ha reiniciado. Recargando…</div>
 
+  <dialog class="quality-dialog" id="qualityDialog" aria-labelledby="qualityTitle" aria-describedby="qualityDescription">
+    <p class="kicker">Vivienda 10 · Visita 3D</p>
+    <h1 id="qualityTitle">¿Cómo quieres verla?</h1>
+    <p class="quality-dialog__description" id="qualityDescription">Elige el nivel gráfico antes de cargar el modelo.</p>
+    <div class="quality-options">
+      <button class="quality-option" type="button" data-quality="normal">
+        <span class="quality-option__tag">Recomendado</span>
+        <strong>Gráficos normales</strong>
+        <span>La experiencia actual, equilibrada para una carga más rápida y un uso fluido.</span>
+      </button>
+      <button class="quality-option quality-option--detail" type="button" data-quality="detailed">
+        <span class="quality-option__tag">Máximo detalle</span>
+        <strong>Gráficos detallados</strong>
+        <span>Luz y cielo HDR, materiales PBR de alta resolución, sombras ambientales más precisas y color más natural. En escritorio carga superficies seleccionadas en 4K; puede tardar más y exigir más a la tarjeta gráfica.</span>
+      </button>
+    </div>
+    <p class="quality-dialog__status" id="qualityStatus" role="status" aria-live="polite"></p>
+  </dialog>
+
   <header class="topbar">
     <a class="mark" href="#" id="toTop">Vivienda <span>10</span></a>
     <button class="pill" id="freeBtn">Explorar<span class="long"> libremente</span></button>
@@ -57,12 +76,26 @@
 
   <div class="freebar" id="freebar">
     <div class="seg" id="floors"></div>
+    <button id="showPlans" type="button" aria-haspopup="dialog" aria-controls="plansView" aria-expanded="false">Planos</button>
     <button id="exitFree">← Volver al recorrido</button>
   </div>
   <p class="freehint" id="freehint">Arrastra para girar · Rueda para acercar · Clic derecho para desplazar</p>
 
+  <dialog class="plans-view" id="plansView" aria-labelledby="plansTitle">
+    <header class="plans-view__header">
+      <div>
+        <p class="kicker">asianPark 25 · Vivienda 10</p>
+        <h2 id="plansTitle">Planos acotados</h2>
+        <p>Las cuatro plantas, con las cotas del proyecto y la superficie de cada estancia.</p>
+      </div>
+      <button class="pill" id="closePlans" type="button">Cerrar</button>
+    </header>
+    <div class="plans-grid" id="planCards"></div>
+    <p class="plans-view__note">Las cotas y superficies que no aparecen explícitas en el plano se estiman desde el modelo y se marcan con ≈. En plantas irregulares o con zonas integradas, las cotas globales no equivalen necesariamente a la superficie útil. En el sótano, las plazas suman 5,73 m de ancho (2,80 + 2,93), aunque la cota total indica 5,66 m; se mantienen ambas medidas del plano.</p>
+  </dialog>
+
   <main id="track"></main>
 
-  <script type="module" src="/src/main.js"></script>
+  <script type="module" src="/src/entry.js"></script>
 </body>
 </html>
